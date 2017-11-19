@@ -1,0 +1,412 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 9.6.6
+-- Dumped by pg_dump version 9.6.6
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: pingpong; Type: DATABASE; Schema: -; Owner: postgres
+--
+
+CREATE DATABASE pingpong WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'en_US.UTF-8' LC_CTYPE = 'en_US.UTF-8';
+
+
+ALTER DATABASE pingpong OWNER TO postgres;
+
+\connect pingpong
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: game; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE game (
+    game_id integer NOT NULL,
+    match_id integer NOT NULL,
+    player1_score integer NOT NULL,
+    player2_score integer NOT NULL
+);
+
+
+ALTER TABLE game OWNER TO postgres;
+
+--
+-- Name: match; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE match (
+    match_id integer NOT NULL,
+    player1_id integer NOT NULL,
+    player2_id integer NOT NULL,
+    "time" timestamp without time zone DEFAULT now() NOT NULL,
+    league_id integer NOT NULL
+);
+
+
+ALTER TABLE match OWNER TO postgres;
+
+--
+-- Name: game_game_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE game_game_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE game_game_id_seq OWNER TO postgres;
+
+--
+-- Name: game_game_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE game_game_id_seq OWNED BY match.match_id;
+
+
+--
+-- Name: game_game_id_seq1; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE game_game_id_seq1
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE game_game_id_seq1 OWNER TO postgres;
+
+--
+-- Name: game_game_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE game_game_id_seq1 OWNED BY game.game_id;
+
+
+--
+-- Name: league; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE league (
+    league_id integer NOT NULL,
+    name character varying(50) NOT NULL,
+    league_start timestamp without time zone DEFAULT now() NOT NULL,
+    league_end timestamp without time zone,
+    challenge_anyone boolean DEFAULT false NOT NULL,
+    min_score integer,
+    max_score integer,
+    high_win_points integer DEFAULT 2 NOT NULL,
+    low_win_points integer DEFAULT 1 NOT NULL,
+    high_loss_points integer DEFAULT '-1'::integer NOT NULL,
+    low_loss_points integer DEFAULT '-2'::integer NOT NULL
+);
+
+
+ALTER TABLE league OWNER TO postgres;
+
+--
+-- Name: league_league_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE league_league_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE league_league_id_seq OWNER TO postgres;
+
+--
+-- Name: league_league_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE league_league_id_seq OWNED BY league.league_id;
+
+
+--
+-- Name: player; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE player (
+    player_id integer NOT NULL,
+    name character varying(100) NOT NULL,
+    score integer DEFAULT 0 NOT NULL,
+    created date DEFAULT now() NOT NULL,
+    total_wins integer DEFAULT 0 NOT NULL,
+    total_losses integer DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE player OWNER TO postgres;
+
+--
+-- Name: players_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE players_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE players_id_seq OWNER TO postgres;
+
+--
+-- Name: players_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE players_id_seq OWNED BY player.player_id;
+
+
+--
+-- Name: game game_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY game ALTER COLUMN game_id SET DEFAULT nextval('game_game_id_seq1'::regclass);
+
+
+--
+-- Name: league league_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY league ALTER COLUMN league_id SET DEFAULT nextval('league_league_id_seq'::regclass);
+
+
+--
+-- Name: match match_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY match ALTER COLUMN match_id SET DEFAULT nextval('game_game_id_seq'::regclass);
+
+
+--
+-- Name: player player_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY player ALTER COLUMN player_id SET DEFAULT nextval('players_id_seq'::regclass);
+
+
+--
+-- Data for Name: game; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY game (game_id, match_id, player1_score, player2_score) FROM stdin;
+\.
+
+
+--
+-- Name: game_game_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('game_game_id_seq', 1, false);
+
+
+--
+-- Name: game_game_id_seq1; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('game_game_id_seq1', 1, false);
+
+
+--
+-- Data for Name: league; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY league (league_id, name, league_start, league_end, challenge_anyone, min_score, max_score, high_win_points, low_win_points, high_loss_points, low_loss_points) FROM stdin;
+\.
+
+
+--
+-- Name: league_league_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('league_league_id_seq', 1, false);
+
+
+--
+-- Data for Name: match; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY match (match_id, player1_id, player2_id, "time", league_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: player; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY player (player_id, name, score, created, total_wins, total_losses) FROM stdin;
+\.
+
+
+--
+-- Name: players_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('players_id_seq', 13, true);
+
+
+--
+-- Name: match game_game_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY match
+    ADD CONSTRAINT game_game_id_key UNIQUE (match_id);
+
+
+--
+-- Name: match game_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY match
+    ADD CONSTRAINT game_pkey PRIMARY KEY (player1_id, player2_id);
+
+
+--
+-- Name: game game_pkey1; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY game
+    ADD CONSTRAINT game_pkey1 PRIMARY KEY (game_id);
+
+
+--
+-- Name: league league_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY league
+    ADD CONSTRAINT league_pkey PRIMARY KEY (league_id);
+
+
+--
+-- Name: player players_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY player
+    ADD CONSTRAINT players_pkey PRIMARY KEY (player_id);
+
+
+--
+-- Name: game game_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY game
+    ADD CONSTRAINT game_match_id_fkey FOREIGN KEY (match_id) REFERENCES match(match_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: match game_player1_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY match
+    ADD CONSTRAINT game_player1_id_fkey FOREIGN KEY (player1_id) REFERENCES player(player_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: match game_player2_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY match
+    ADD CONSTRAINT game_player2_id_fkey FOREIGN KEY (player2_id) REFERENCES player(player_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: match league_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY match
+    ADD CONSTRAINT league_id_fkey FOREIGN KEY (league_id) REFERENCES league(league_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: game; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE game TO pingpong;
+
+
+--
+-- Name: match; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE match TO pingpong;
+
+
+--
+-- Name: game_game_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,USAGE ON SEQUENCE game_game_id_seq TO pingpong;
+
+
+--
+-- Name: game_game_id_seq1; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,USAGE ON SEQUENCE game_game_id_seq1 TO pingpong;
+
+
+--
+-- Name: player; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE player TO pingpong;
+
+
+--
+-- Name: players_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,USAGE ON SEQUENCE players_id_seq TO pingpong;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
