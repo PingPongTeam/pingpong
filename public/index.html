@@ -2,11 +2,27 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="css/style.css">
-    <script type="text/javascript" src="js/functions.js"></script>
-</script>
 </head>
-<body>
-  <table id="players">
-  </table>
+  <body>
+  <div class="tab">
+    <button class="tablinks" onclick="openTab(event, 'scoreTable')" id="defaultOpen">Score Table</button>
+    <button class="tablinks" onclick="openTab(event, 'registerGame')">Register Game</button>
+    <button class="tablinks" onclick="openTab(event, 'registerPlayer')">Register Player</button>
+  </div>
+
+  <div id="scoreTable" class="tabcontent">
+    <table id="players">
+    </table>
+  </div>
+
+  <div id="registerGame" class="tabcontent">
+    <h3>TODO: Register Game</h3>
+  </div>
+
+  <div id="registerPlayer" class="tabcontent">
+    <h3>TODO: Register Player</h3>
+  </div>
+
+  <script type="text/javascript" src="js/functions.js"></script>
 </body>
 </html>
