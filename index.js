@@ -12,21 +12,47 @@ const jsonParser = bodyParser.json({type : 'application/*'});
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.all('/v1/newplayer/:name/:score?', jsonParser, async function(req, res) {
+var PPAPI = {};
+
+app.all('/v1/newplayer', jsonParser, async function(req, res) {
     console.log(req.path + " request (from " + req.ip + ")");
-    const players = await db.getPlayers();
-    if (players.find(function(player) {
-            return player.name === req.params.name;
-        })) {
-        res.json(
-            {rc : -1, msg : "Player '" + req.params.name + "' already exists"});
-    } else {
-        await db.registerPlayer(req.params.name, req.params.score || 0);
-        const players = await db.getPlayers();
-        tellAll("players", players);
-        res.json({rc: 0});
-    }
+    if (!req.body)
+        return res.sendStatus(400);
+    const result = await PPAPI.newPlayer(req.body);
+    console.log("result=" + JSON.stringify(result));
+    res.json(result);
 });
+
+app.all('/v1/newleague', jsonParser, async function(req, res) {
+    console.log(req.path + " request (from " + req.ip + ")");
+    if (!req.body)
+        return res.sendStatus(400);
+    res.json(await PPAPI.newLeauge(req.body));
+});
+
+PPAPI.newPlayer = async function(obj) {
+    const players = await db.getPlayers();
+    console.log("Create player (" + JSON.stringify(obj) + ")");
+    if (players.find(function(player) {
+            return player.name === obj.name;
+        })) {
+        return {rc : -1, msg : "Player '" + obj.name + "' already exists"};
+    } else {
+        try {
+            const res = await db.registerPlayer(obj.name, obj.initialScore || 0);
+            tellAll("players", await db.getPlayers());
+            return {rc: 0, data: res};
+        } catch (err) {
+            return {rc: -1, data: err};
+        }
+    }
+}
+
+PPAPI.newLeague = async function(obj) {
+    // TODO
+};
+
+
 
 app.all('/v1/players', async function(req, res) {
     const players = await db.getPlayers();

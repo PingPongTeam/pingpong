@@ -5,22 +5,32 @@
 </head>
   <body>
   <div class="tab">
-    <button class="tablinks" onclick="openTab(event, 'scoreTable')" id="defaultOpen">Score Table</button>
-    <button class="tablinks" onclick="openTab(event, 'registerGame')">Register Game</button>
+    <button class="tablinks" onclick="openTab(event, 'globalScore')" id="defaultOpen">Global Score</button>
+    <button class="tablinks" onclick="openTab(event, 'activeLeagues')">Active Leagues</button>
+    <button class="tablinks" onclick="openTab(event, 'registerMatch')">Register Match-</button>
     <button class="tablinks" onclick="openTab(event, 'registerPlayer')">Register Player</button>
+    <button class="tablinks" onclick="openTab(event, 'setupLeagues')">Setup Leagues</button>
   </div>
 
-  <div id="scoreTable" class="tabcontent">
-    <table id="players">
+  <div id="globalScore" class="tabcontent">
+    <table id="globalScore">
     </table>
   </div>
 
-  <div id="registerGame" class="tabcontent">
-    <h3>TODO: Register Game</h3>
+  <div id="activeLeagues" class="tabcontent">
+    <h3>TODO: Display active leagues</h3>
+  </div>
+
+  <div id="registerMatch" class="tabcontent">
+    <h3>TODO: Register Match</h3>
   </div>
 
   <div id="registerPlayer" class="tabcontent">
     <h3>TODO: Register Player</h3>
+  </div>
+
+  <div id="setupLeagues" class="tabcontent">
+    <h3>TODO: Setup Leagues</h3>
   </div>
 
   <script type="text/javascript" src="js/functions.js"></script>
