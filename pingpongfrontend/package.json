@@ -1,0 +1,22 @@
+{
+  "name": "pingpongfrontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "glamor": "^2.20.40",
+    "glamorous": "^4.11.0",
+    "install": "^0.10.2",
+    "normalize.css": "^7.0.0",
+    "npm": "^5.5.1",
+    "prop-types": "^15.6.0",
+    "react": "^16.1.1",
+    "react-dom": "^16.1.1",
+    "react-scripts": "1.0.17"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
