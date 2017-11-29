@@ -9,9 +9,7 @@
   },
   "author": "Olle",
   "dependencies": {
-    "body-parser": "^1.18.2",
     "express": "^4.16.2",
-    "pg": "^7.4.0",
-    "ws": "^3.3.1"
+    "socket.io": "^2.0.4"
   }
 }
