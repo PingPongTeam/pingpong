@@ -1,6 +1,6 @@
 import React from 'react';
 import glamorous from 'glamorous';
-import Login from './layouts/Login/';
+import Signup from './layouts/Signup';
 
 const Wrapper = glamorous.div({
   display: 'flex',
@@ -13,7 +13,7 @@ const Wrapper = glamorous.div({
 const LoggedOut = () => {
   return (
     <Wrapper>
-      <Login />
+      <Signup />
     </Wrapper>
   );
 };
