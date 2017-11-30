@@ -1,21 +1,82 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import glamorous from 'glamorous';
+import Form from 'components/Form';
+import Input from 'components/Input';
+import Button from 'components/Button';
+import SecondaryButton from 'components/SecondaryButton';
 
-const StyledForm = glamorous.form({
-  display: 'flex',
-  flexDirection: 'column',
-  maxWidth: 600
+const Title = glamorous.h1({
+  textAlign: 'center'
 });
 
-const LoginRender = () => {
+const SignupRender = ({
+  handleSignin,
+  validationObject: {
+    name: nameError,
+    email: emailError,
+    password: passwordError
+  },
+  isLoading
+}) => {
+
+  const handleSubmit = e => {
+    e.preventDefault();
+    const email = e.target.email.value;
+    const password = e.target.password.value;
+    handleSignin({ email, password });
+  }
+
+  const getErrorObject = code => {
+    switch (code) {
+      case 'required':
+        return {
+          status: 'danger',
+          text: 'required'
+        }
+      case 'wrong':
+        return {
+          status: 'danger',
+          text: 'WROOOONG!'
+        }
+      default:
+        return {
+          status: 'danger',
+          text: 'unknown error'
+        }
+    }
+  }
+
   return (
     <div>
-      <StyledForm>
-        <h1>LOGGA IN DÅ DUMJÄVEL</h1>
-        <input type="text" />
-      </StyledForm>
+      <Title>Sign in</Title>
+      <Form onSubmit={handleSubmit}>
+        <Input
+          label='email'
+          type='email'
+          name='email'
+          status={emailError && getErrorObject(emailError).status}
+          notice={emailError && getErrorObject(emailError).text}
+        />
+        <Input
+          label='password'
+          type='password'
+          name='password'
+          status={passwordError && getErrorObject(passwordError).status}
+          notice={passwordError && getErrorObject(passwordError).text}
+        />
+        <Button
+          style={{marginTop: '1em'}}
+          loading={isLoading}
+        >
+          Sign in
+        </Button>
+      </Form>
+      <SecondaryButton style={{marginTop: '1.5em'}}>
+        <Link to='/signup'>Create a new account</Link>
+      </SecondaryButton>
     </div>
-  );
+  )
 }
 
-export default LoginRender;
+export default SignupRender;

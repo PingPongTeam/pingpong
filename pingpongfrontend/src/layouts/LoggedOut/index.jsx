@@ -1,6 +1,6 @@
 import React from 'react';
 import glamorous from 'glamorous';
-import { Route, Switch } from 'react-router-dom';
+import { Route, Redirect, Switch } from 'react-router-dom';
 import Login from './layouts/Login';
 import Signup from './layouts/Signup';
 
@@ -18,6 +18,7 @@ const LoggedOut = () => {
       <Switch>
         <Route path='/' exact component={Login} />
         <Route path='/signup' exact component={Signup} />
+        <Redirect to='/404' />
       </Switch>
     </Wrapper>
   );

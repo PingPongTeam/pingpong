@@ -9,20 +9,22 @@ const Wrapper = glamorous.div({
   margin: '5px 0'
 });
 const StyledInput = glamorous.input({
-  border: `1px dashed rgb(${globalStyles.colors.dinboxBlue})`,
-  color: `rgb(${globalStyles.colors.dinboxBlue})`,
+  border: `1px solid rgb(${globalStyles.colors.black})`,
+  color: `rgb(${globalStyles.colors.black})`,
+  fontSize: '24px',
   padding: globalStyles.inputPadding,
   borderRadius: globalStyles.borderRadius,
   ':hover': {
-    backgroundColor: `rgba(${globalStyles.colors.dinboxBlue}, .05)`
+    backgroundColor: `rgba(${globalStyles.colors.black}, .05)`
   },
   ':focus': {
-    backgroundColor: `rgba(${globalStyles.colors.dinboxBlue}, .05)`
+    backgroundColor: `rgba(${globalStyles.colors.black}, .05)`
   }
 });
 const StyledLabel = glamorous.label({
   color: 'black',
-  backgroundColor: 'white'
+  backgroundColor: 'white',
+  fontSize: '18px',
 });
 
 const Input = ({

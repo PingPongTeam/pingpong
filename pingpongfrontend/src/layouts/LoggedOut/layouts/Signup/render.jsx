@@ -1,7 +1,14 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import glamorous from 'glamorous';
 import Form from 'components/Form';
 import Input from 'components/Input';
 import Button from 'components/Button';
+import SecondaryButton from 'components/SecondaryButton';
+
+const Title = glamorous.h1({
+  textAlign: 'center'
+});
 
 const SignupRender = ({
   handleSignup,
@@ -43,35 +50,39 @@ const SignupRender = ({
 
   return (
     <div>
-      <h1>Create an account</h1>
+      <Title>Create an account</Title>
       <Form onSubmit={handleSubmit}>
         <Input
-          label='Name'
+          label='name'
           type='text'
           name='name'
           status={nameError && getErrorObject(nameError).status}
           notice={nameError && getErrorObject(nameError).text}
         />
         <Input
-          label='Email'
+          label='email'
           type='email'
           name='email'
           status={emailError && getErrorObject(emailError).status}
           notice={emailError && getErrorObject(emailError).text}
         />
         <Input
-          label='Password'
+          label='password'
           type='password'
           name='password'
           status={passwordError && getErrorObject(passwordError).status}
           notice={passwordError && getErrorObject(passwordError).text}
         />
         <Button
+          style={{marginTop: '1em'}}
           loading={isLoading}
         >
           Create account
         </Button>
       </Form>
+      <SecondaryButton style={{marginTop: '1.5em'}}>
+        <Link to='/'>sign in to existing account</Link>
+      </SecondaryButton>
     </div>
   )
 }

@@ -1,8 +1,8 @@
 import { Component } from 'react';
-import { signup } from 'services/api/signup';
+import { socket } from 'services/api';
+import { user } from 'services/api/user';
 import emailValidator from 'email-validator';
 import Render from './render';
-import { socket } from 'services/api';
 
 class SignupContainer extends Component {
 
@@ -54,7 +54,7 @@ class SignupContainer extends Component {
     }
     if(passesValidation === false) { return; }
     this.setState(() => ({isLoading: true}));
-    signup({name, email, password});
+    user.signup({name, email, password});
   }
 
   render() {
