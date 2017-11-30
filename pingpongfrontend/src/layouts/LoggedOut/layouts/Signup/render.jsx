@@ -1,5 +1,4 @@
 import React from 'react';
-import glamorous from 'glamorous';
 import Form from 'components/Form';
 import Input from 'components/Input';
 import Button from 'components/Button';
@@ -26,12 +25,17 @@ const SignupRender = ({
     switch (code) {
       case 'required':
         return {
-          status: 'warning',
+          status: 'danger',
           text: 'required'
+        }
+      case 'invalidEmail':
+        return {
+          status: 'danger',
+          text: 'invalid'
         }
       default:
         return {
-          status: 'warning',
+          status: 'danger',
           text: 'unknown error'
         }
     }

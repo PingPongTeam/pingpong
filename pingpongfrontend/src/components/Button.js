@@ -11,10 +11,10 @@ const StyledButton = glamorous.button({
   textTransform: 'uppercase',
   cursor: 'pointer',
   ':hover': {
-    backgroundColor: `rgba(${globalStyles.colors.dinboxBlue}, .1)`
+    backgroundColor: `rgba(${globalStyles.colors.dinboxBlue}, .05)`
   },
   ':focus': {
-    backgroundColor: `rgba(${globalStyles.colors.dinboxBlue}, .2)`
+    backgroundColor: `rgba(${globalStyles.colors.dinboxBlue}, .1)`
   }
 });
 

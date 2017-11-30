@@ -1,6 +1,8 @@
 import { Component } from 'react';
 import { signup } from 'services/api/signup';
+import emailValidator from 'email-validator';
 import Render from './render';
+import { socket } from 'services/api';
 
 class SignupContainer extends Component {
 
@@ -17,6 +19,9 @@ class SignupContainer extends Component {
       isLoading: false,
       validationObject: this.defaultValidationObject
     }
+    socket.on('user:signup', (message) => {
+      console.log('user:signup response from backend', message)
+    });
   }
 
   setValidationState(input, statusCode) {
@@ -25,19 +30,25 @@ class SignupContainer extends Component {
     }));
   }
 
-  handleSignup({name, email, password}) {
+  handleSignup({name: rawName, email: rawEmail, password: rawPassword}) {
     console.log('wat')
-    this.setState(() => {validationObject: this.defaultValidationObject});
+    this.setState(() => ({validationObject: this.defaultValidationObject}));
+    const name = rawName.trim();
+    const email = rawEmail.trim();
+    const password = rawPassword.trim();
     let passesValidation = true;
-    if(name.trim().length < 1) {
+    if(name.length < 1) {
       this.setValidationState('name', 'required');
       passesValidation = false;
     }
-    if(email.trim().length < 1) {
+    if(email.length < 1) {
       this.setValidationState('email', 'required');
       passesValidation = false;
+    } else if(!emailValidator.validate(email)) {
+      this.setValidationState('email', 'invalidEmail');
+      passesValidation = false;
     }
-    if(password.trim().length < 1) {
+    if(password.length < 1) {
       this.setValidationState('password', 'required');
       passesValidation = false;
     }

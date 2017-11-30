@@ -1,5 +1,4 @@
 import React from 'react';
-import { css } from 'glamor';
 import glamorous from 'glamorous';
 import globalStyles from 'globalStyles';
 
@@ -15,7 +14,10 @@ const StyledInput = glamorous.input({
   padding: globalStyles.inputPadding,
   borderRadius: globalStyles.borderRadius,
   ':hover': {
-    backgroundColor: `rgba(${globalStyles.colors.dinboxBlue}, .1)`
+    backgroundColor: `rgba(${globalStyles.colors.dinboxBlue}, .05)`
+  },
+  ':focus': {
+    backgroundColor: `rgba(${globalStyles.colors.dinboxBlue}, .05)`
   }
 });
 const StyledLabel = glamorous.label({
