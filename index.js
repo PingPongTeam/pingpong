@@ -23,23 +23,40 @@ io.on('connection', function onConnection(socket) {
 
   socket.on('user:signup', function onUserSignup(data, answer) {
     log("User signup: " + JSON.stringify(data));
+
     r.table('users')
-        .insert(
-            {userId : data.email, name : data.name, password : data.password})
+        .filter({'email' : data.email})
         .run()
-        .then(function onCreatedUser(result) {
-          if (result.errors) {
-            log("Error creating user: " + JSON.stringify(result));
-            // Leaking error message contains all user information.
-            // Rethinkdb seems to return very machine-undfriendly error
-            // messages.
-            // TODO: Should return informative error messsage.
-            answer({status : 1, errors : [ {msg : result.first_error} ]});
-          } else {
-            log("New user created: " + JSON.stringify(result));
-            // TODO: Should fetch/generate and return a jwt.
-            answer({status : 0, jwt : "Made up JWT"});
+        .then(function(result) {
+          if (result.length !== 0) {
+            // User with this email already exists in database
+            answer({status : 1, error : "email is already registered"});
+            return Promise.resolve();
           }
+
+          console.log("users with " + data.email + ":");
+          console.log(result);
+
+          // Create user
+          return r.table('users')
+              .insert({
+                email : data.email,
+                name : data.name,
+                password : data.password
+              })
+              .run()
+              .then(function onCreatedUser(result) {
+                if (result.errors) {
+                  log("Error creating user: " + JSON.stringify(result));
+
+									// Return some kind of internal server error
+                  answer({status : 1, errors : [ {msg : result.first_error} ]});
+                } else {
+                  log("New user created: " + JSON.stringify(result));
+                  // TODO: Should fetch/generate and return a jwt.
+                  answer({status : 0, jwt : "Made up JWT"});
+                }
+              });
         });
   });
 
