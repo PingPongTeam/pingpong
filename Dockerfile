@@ -1,43 +1,30 @@
-FROM debian:stable
+# only use latest in dev environment, if you move this to production pin down the specific verision
+FROM node:latest
 
-ENV NVM_VERSION v0.33.0
-ENV NODE_VERSION 9.2.0
-ENV NVM_DIR /root/.nvm
+RUN mkdir -p /opt/app
 
-# Install pre-reqs
-RUN apt-get update
-RUN apt-get -y install curl build-essential postgresql postgresql-client
+# set the environment type of the node server. This can be either dev or prod.
+# dockerfile will default it to prod, the composer file will later override this
+ARG NODE_ENV=production
+ENV NODE_ENV $NODE_ENV
 
-# Start postgres
-RUN /etc/init.d/postgresql start
+# default to port 80 for node, and 5858 or 9229 for debug.
+ARG PORT=80
+ENV PORT $PORT
+EXPOSE $PORT 5858 9229
 
-# Install NVM
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/${NVM_VERSION}/install.sh | bash
+# creating a healthcheck that will ensure that this server will return HTTP 200 every 30 sec
+HEALTHCHECK CMD curl -fs http://localhost:$PORT/healthz || exit 1
 
+# install dependencies first, in a different location for easier app bind mounting for local development
+WORKDIR /opt
+COPY package.json package-lock.json* ./
+RUN npm install && npm cache clean --force
+ENV PATH /opt/node_modules/.bin$PATH
 
-# Install NODE
-#RUN bash -l -c "source ~/.bashrc"
-RUN . ~/.bashrc; \
-    nvm install v$NODE_VERSION; \
-    nvm use v$NODE_VERSION;
+# copyt in our source code last, as it changes the most
+WORKDIR /opt/app
+COPY . /opt/app
 
-
-# add node and npm to path so the commands are available
-ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
-ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
-
-# Create app directory
-WORKDIR /usr/src/app
-
-#Install app dependencies
-COPY package*.json ./
-
-RUN npm install
-
-# Bundle app source
-COPY . .
-
-EXPOSE 8080
-EXPOSE 3000
-CMD [ "npm", "start"]
-
+# run the node server 
+CMD [ "npm", "start" ]
