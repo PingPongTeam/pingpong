@@ -19,14 +19,14 @@ function newToken({email}, expirationTime)
                }
              });
   });
-  }
+}
 
 function randomString(length)
 {
   return crypto.randomBytes(Math.ceil(length / 2))
       .toString('hex')
       .slice(0, length);
-  }
+}
 
 function sha512(password, salt)
 {
@@ -34,7 +34,7 @@ function sha512(password, salt)
   hash.update(password);
   var value = hash.digest('hex');
   return {salt : salt, passwordHash : value};
-  }
+}
 
 class UserDb {
   constructor(r)
@@ -43,8 +43,8 @@ class UserDb {
     log("Created user db object");
   }
 
-  // User sign up
-  signup(data, answer)
+  // Create user
+  create(data, answer)
   {
     // TODO: Should verify that the email is a valid address
     var self = this;
@@ -84,15 +84,15 @@ class UserDb {
                   });
                 }
               })
-              .catch(function(error) {
+              .catch(function creatUserError(error) {
                 log("Error creating user: " + error);
                 answer({status : 500, errors : [ error ]});
               });
         });
   }
 
-  // User sign in
-  signin(data, answer)
+  // User login
+  login(data, answer)
   {
     this.r.table('users')
         .filter({'email' : data.email})
@@ -115,7 +115,7 @@ class UserDb {
           }
           // Return invalid user for both incorrect password and non existing
           // account.
-          answer({status : 1, errors: [{message : "invalid user"}]});
+          answer({status : 1, errors : [ {message : "invalid user"} ]});
           return Promise.resolve();
         })
         .catch(function(error) {

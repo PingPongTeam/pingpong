@@ -18,8 +18,8 @@ io.on('connection', function onConnection(socket) {
 
   log("New connection from " + socket.request.connection.remoteAddress);
 
-  socket.on('user:signup', (data, answer) => userDb.signup(data, answer));
-  socket.on('user:signin', (data, answer) => userDb.signin(data, answer));
+  socket.on('user:create', (data, answer) => userDb.create(data, answer));
+  socket.on('user:login', (data, answer) => userDb.login(data, answer));
 });
 
 log("Listening for connections at port " + config.express.port);
