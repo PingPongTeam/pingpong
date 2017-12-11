@@ -17,30 +17,30 @@ io.on('connection', function onConnection(socket) {
 
   log("New connection from " + socket.request.connection.remoteAddress);
 
-  socket.on('user:create', function(data, answer) {
+  socket.on('user:create', function(data, replyUser) {
     userDb.create(data)
-      .then(function({userId, token}) {
+        .then(function({userId, token}) {
           socket.userId = userId;
           socket.token = token;
           log("User created: " + userId);
-          answer({status : 0, token : token});
+          replyUser({status : 0, token : token});
         })
         .catch(function(errorArray) {
           log("Error creating user: " + JSON.stringify(errorArray));
-          answer({status : 1, errors : errorArray});
+          replyUser({status : 1, errors : errorArray});
         });
   });
-  socket.on('user:login', function(data, answer) {
+  socket.on('user:login', function(data, replyUser) {
     userDb.login(data)
-      .then(function({userId, token}) {
+        .then(function({userId, token}) {
           socket.userId = userId;
           socket.token = token;
           log("User logged in: " + userId);
-          answer({status : 0, token : token});
+          replyUser({status : 0, token : token});
         })
         .catch(function(errorArray) {
           log("User failed to login: " + JSON.stringify(errorArray));
-          answer({status : 1, errors : errorArray});
+          replyUser({status : 1, errors : errorArray});
         });
   });
 });
