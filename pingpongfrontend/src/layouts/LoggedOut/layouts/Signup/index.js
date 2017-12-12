@@ -54,7 +54,7 @@ class SignupContainer extends Component {
     }
     if(passesValidation === false) { return; }
     this.setState(() => ({isLoading: true}));
-    user.signup({name, email, password});
+    user.create({ name, email, password });
   }
 
   render() {

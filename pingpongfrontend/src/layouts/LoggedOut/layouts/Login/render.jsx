@@ -72,9 +72,11 @@ const SignupRender = ({
           Sign in
         </Button>
       </Form>
-      <SecondaryButton style={{marginTop: '1.5em'}}>
-        <Link to='/signup'>Create a new account</Link>
-      </SecondaryButton>
+      <Link to='/signup'>
+        <SecondaryButton style={{marginTop: '1.5em'}}>
+          Create a new account
+        </SecondaryButton>
+      </Link>
     </div>
   )
 }

@@ -3,14 +3,19 @@ import ReactDOM from 'react-dom';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
-import { socket } from 'services/api';
 import 'normalize.css';
 import 'baseStyles.css';
 import NoMatch from 'layouts/NoMatch';
+import state from 'services/state';
 
-socket.on('connect', () => {
-  console.log('CONNECTED!!!W WOOOOO');
-  socket.emit('Huddik suger', 'true');
+
+
+import { autorun } from 'mobx';
+
+autorun(() => {
+  console.log('are we connected?: ', state.connectedToServer);
+  console.log('SETTING UP THIS THING: ', state.initInProcess);
+  console.log('are we logged in?: ', state.loggedIn);
 });
 
 const Root = () => (

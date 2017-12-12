@@ -7,6 +7,8 @@
     "glamor": "^2.20.40",
     "glamorous": "^4.11.0",
     "install": "^0.10.2",
+    "mobx": "^3.4.1",
+    "mobx-react": "^4.3.5",
     "normalize.css": "^7.0.0",
     "npm": "^5.5.1",
     "prop-types": "^15.6.0",

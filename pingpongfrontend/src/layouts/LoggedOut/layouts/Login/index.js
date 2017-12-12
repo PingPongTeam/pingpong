@@ -28,7 +28,7 @@ class LoginContainer extends Component {
     }));
   }
 
-  handleSignin({email: rawEmail, password: rawPassword}) {
+  async handleSignin({email: rawEmail, password: rawPassword}) {
     console.log('wat')
     if(this.state.isLoading === true) return;
     console.log('wat2')
@@ -46,7 +46,15 @@ class LoginContainer extends Component {
     }
     if(passesValidation === false) { return; }
     this.setState(() => ({isLoading: true}));
-    user.signin({email, password});
+    try {
+      const response = await user.loginEmailPass({email, password});
+      
+    } catch (error) {
+      if ( error.status && error.status === 0 ) {
+        
+      }
+    }
+    this.setState(() => ({ isLoading: false }));
   }
 
   render() {
