@@ -8,10 +8,10 @@ RUN mkdir -p /opt/app
 ARG NODE_ENV=production
 ENV NODE_ENV $NODE_ENV
 
-# default to port 80 for node, and 5858 or 9229 for debug.
-ARG PORT=88
+# default to port 80 for node, and 5050 or 5225 for debug.
+ARG PORT=80
 ENV PORT $PORT
-EXPOSE $PORT 5858 9229
+EXPOSE $PORT 5050 5225
 
 # creating a healthcheck that will ensure that this server will return HTTP 200 every 30 sec
 HEALTHCHECK CMD curl -fs http://localhost:$PORT/healthz || exit 1
@@ -26,5 +26,7 @@ ENV PATH /opt/node_modules/.bin$PATH
 WORKDIR /opt/app
 COPY . /opt/app
 
+#build react app
+RUN npm build
 # run the node server 
 CMD [ "npm", "start" ]
