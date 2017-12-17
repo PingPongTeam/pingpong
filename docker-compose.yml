@@ -5,11 +5,11 @@ services:
     image: rethinkdb:latest
     container_name: rethink
     volumes:
-      - ./data:/rethinkdata
+      - ./data:/data
     ports:
       - "8080:8080"
       - "28015:28015"
-      - "59015:29015"
+      - "29015:29015"
 
   nodefrontend:
     build:

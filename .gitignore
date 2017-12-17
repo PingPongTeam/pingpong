@@ -1,0 +1,23 @@
+# See https://help.github.com/ignore-files/ for more about ignoring files.
+*~
+# dependencies
+*/node_modules
+
+# testing
+pingpongfrontend/coverage
+
+# production
+pingpongfrontend/build
+
+# misc
+pingpongfrontend/.DS_Store
+pingpongfrontend/.env.local
+pingpongfrontend/.env.development.local
+pingpongfrontend/.env.test.local
+pingpongfrontend/.env.production.local
+
+pingpongfrontend/npm-debug.log*
+pingpongfrontend/yarn-debug.log*
+pingpongfrontend/yarn-error.log*
+
+db/data/*
