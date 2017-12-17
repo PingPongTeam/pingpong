@@ -9,7 +9,7 @@ ARG NODE_ENV=production
 ENV NODE_ENV $NODE_ENV
 
 # default to port 80 for node, and 5858 or 9229 for debug.
-ARG PORT=80
+ARG PORT=88
 ENV PORT $PORT
 EXPOSE $PORT 5858 9229
 
@@ -22,7 +22,7 @@ COPY package.json package-lock.json* ./
 RUN npm install && npm cache clean --force
 ENV PATH /opt/node_modules/.bin$PATH
 
-# copyt in our source code last, as it changes the most
+# copy in our source code last, as it changes the most
 WORKDIR /opt/app
 COPY . /opt/app
 

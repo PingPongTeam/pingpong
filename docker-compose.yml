@@ -4,35 +4,51 @@ services:
   rethinkdb:
     image: rethinkdb:latest
     container_name: rethink
+    volumes:
+      - ./data:/rethinkdata
     ports:
-      - "58080:8080"
+      - "8080:8080"
       - "28015:28015"
       - "59015:29015"
 
-  node_backend:
+  nodefrontend:
     build:
-      context: .
+      context: ./pingpongfrontend
+    container_name: nodefrontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./pingpongfrontend:/frontend
+    environment:
+      - BACKEND_HOST=nodebackend
+      - BACKEND_PORT=3001
+
+  nodebackend:
+    build:
+      context: ./pingpongbackend
       args:
         - NODE_ENV=development
+    container_name: nodebackend
     # either use legacy debug config or new inspect (dont really understand this yet?)
     # NOTE: if nodemon isn't restarting on changes, there can somtimes be problems with windows not seeing file changes.
     # se https://github.com/remy/nodemon#application-isnt-restarting for more information
     # command: ../node_modules/.bin/nodemon --debug=0.0.0.0:5858
     command: ../node_modules/.bin/nodemon --debug=0.0.0.0:9229
     ports:
-      - "80:3000"
+      - "3001:3001"
       - "5858:5858"
       - "9229:9229"
     volumes:
-      - .:/opt/app
+      - ./pingpongbackend:/opt/app
       # this is to prevent host node_modules from accidently getting mounted in the container.
       # in case you want to use node or npm both outside container and also inside the container for test/lint etc
       # so this will overwrite the default node_modules dir in container so it won't conflict with our /opt/node_modules location
       - notused:/opt/app/node_modules
     environment:
       - NODE_ENV=development
-      - SOCKETIO_SERVER_PORT=3000
+      - SOCKETIO_SERVER_PORT=3001
       - RETHINKDB_HOST=rethinkdb
+      - RETHINKDB_PORT=28015
     links:
       - rethinkdb
     depends_on:
