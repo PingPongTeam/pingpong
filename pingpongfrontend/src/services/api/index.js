@@ -2,7 +2,22 @@ import io from 'socket.io-client';
 import state from 'services/state';
 import { user } from './user';
 
-export const socket = io('http://10.10.50.121:3001');
+var backendHost = '';
+var backendPort = '';
+
+if (process.env.BACKEND_HOST == null){
+  backendHost = 'localhost';
+} else{
+  backendHost = process.env.BACKEND_HOST;
+}
+if (process.env.BACKEND_PORT == null){
+  backendPort = ':3001';
+} else{
+  backendPort = ':' + process.env.BACKEND_PORT;
+}
+
+export const socket = io(backendHost + backendPort);
+
 
 socket.on('connect', () => {
   state.connectedToServer = true;
