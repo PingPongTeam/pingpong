@@ -20,9 +20,9 @@
     "socket.io-client": "^2.0.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "start": "../node_modules/react-scripts start",
+    "build": "../node_modules/react-scripts build",
+    "test": "../node_modules/react-scripts test --env=jsdom",
+    "eject": "../node_modules/react-scripts eject"
   }
 }
