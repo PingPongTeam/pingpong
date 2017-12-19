@@ -2,8 +2,8 @@ import io from 'socket.io-client';
 import state from 'services/state';
 import { user } from './user';
 
-var backendHost = '';
-var backendPort = '';
+let backendHost = '';
+let backendPort = '';
 
 if (process.env.BACKEND_HOST == null){
   backendHost = 'localhost';

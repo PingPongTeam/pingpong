@@ -8,11 +8,13 @@ RUN mkdir -p /opt/app
 ARG NODE_ENV=production
 ENV NODE_ENV $NODE_ENV
 
-# default to port 3000.
-EXPOSE 3000
+# default to port 80 for node, and 5858 or 9229 for debug.
+ARG PORT=80
+ENV PORT $PORT
+EXPOSE $PORT 5858 9229
 
 # creating a healthcheck that will ensure that this server will return HTTP 200 every 30 sec
-# HEALTHCHECK CMD curl -fs http://localhost:3000/healthz || exit 1
+HEALTHCHECK CMD curl -fs http://localhost:$PORT/healthz || exit 1
 
 # install dependencies first, in a different location for easier app bind mounting for local development
 WORKDIR /opt

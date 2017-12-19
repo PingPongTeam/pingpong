@@ -18,7 +18,7 @@ services:
         - NODE_ENV=development
     container_name: nodefrontend
     ports:
-      - "3000:3000"
+      - "80:3000"
     volumes:
       - ./frontend:/opt/app
       - notusedfront:/opt/app/node_modules
@@ -26,6 +26,7 @@ services:
       - NODE_ENV=development
       - BACKEND_HOST=nodebackend
       - BACKEND_PORT=3001
+      - PORT=3000
 
   nodebackend:
     build:

@@ -1,5 +1,0 @@
-export PGHOST='localhost'
-export PGUSER=pingpong
-export PGDATABASE=pingpong
-export PGPASSWORD=AWeakPingPongPassword
-export PGPORT=5432
