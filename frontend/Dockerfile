@@ -1,5 +1,5 @@
 # only use latest in dev environment, if you move this to production pin down the specific verision
-FROM node:latest
+FROM node:9.3
 
 RUN mkdir -p /opt/app
 
@@ -18,7 +18,7 @@ EXPOSE 3000
 WORKDIR /opt
 COPY package.json package-lock.json* ./
 RUN npm install && npm cache clean --force
-ENV PATH /opt/node_modules/.bin$PATH
+ENV PATH /opt/node_modules/.bin:$PATH
 
 # copy in our source code last, as it changes the most
 WORKDIR /opt/app
