@@ -11,11 +11,25 @@ const Wrapper = glamorous.div({
 });
 
 class App extends Component {
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      hasConnection: true,
+    }
+  }
+
+  componentWillMount() {
+    const self = this;
+    window.addEventListener('online', () => self.setState( () => ({hasConnection: true })));
+    window.addEventListener('offline', () => self.setState( () => ({hasConnection: false })));
+  }
+
   render() {
     return (
       <Wrapper>
         { !state.connectedToServer && navigator.onLine && (<h1>AAAAAHHH THE SERVER IS DOWN!!!</h1>)}
-        { !navigator.onLine && (<h1>NO INTERNET</h1>)}
+        { !this.state.hasConnection && (<h1>NO INTERNET</h1>)}
         { !state.initInProcess && (
             <Switch>
               <Route path="/signup" exact component={LoggedOut} />
