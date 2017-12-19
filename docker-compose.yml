@@ -13,14 +13,14 @@ services:
 
   nodefrontend:
     build:
-      context: ./pingpongfrontend
+      context: ./frontend
       args:
         - NODE_ENV=development
     container_name: nodefrontend
     ports:
       - "3000:3000"
     volumes:
-      - ./pingpongfrontend:/opt/app
+      - ./frontend:/opt/app
       - notusedfront:/opt/app/node_modules
     environment:
       - NODE_ENV=development
