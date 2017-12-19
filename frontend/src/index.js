@@ -7,9 +7,6 @@ import 'normalize.css';
 import 'baseStyles.css';
 import NoMatch from 'layouts/NoMatch';
 import state from 'services/state';
-
-
-
 import { autorun } from 'mobx';
 
 autorun(() => {
