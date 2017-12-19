@@ -2,8 +2,8 @@ import io from 'socket.io-client';
 import state from 'services/state';
 import { user } from './user';
 
-var backendHost = '';
-var backendPort = '';
+let backendHost;
+let backendPort;
 
 if (process.env.BACKEND_HOST == null){
   backendHost = 'localhost';
@@ -15,6 +15,8 @@ if (process.env.BACKEND_PORT == null){
 } else{
   backendPort = ':' + process.env.BACKEND_PORT;
 }
+
+backendHost = '10.10.50.121';
 
 export const socket = io(backendHost + backendPort);
 

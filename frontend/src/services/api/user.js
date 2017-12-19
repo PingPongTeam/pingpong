@@ -3,12 +3,33 @@ import { socket } from './';
 
 export const user = {};
 
+user.search = ({ searchTerm }) => {
+  return new Promise((resolve, reject) => {
+    socket.emit('user:search',
+    { searchTerm },
+    response => {
+      if ( response.status === 0 ) {
+        state.loggedIn = true;
+        window.localStorage.setItem('jwt', response.token);
+      } else if(response.errors) {
+        reject(response.errors);
+      }
+    });
+  });
+};
+
 user.create = ({ name, email, password }) => {
-  socket.emit('user:create', { name, email, password }, response => {
-    if ( response.status === 0 ) {
-      state.loggedIn = true;
-      window.localStorage.setItem('jwt', response.token);
-    }
+  return new Promise((resolve, reject) => {
+    socket.emit('user:create',
+    { name, email, password },
+    response => {
+      if ( response.status === 0 ) {
+        state.loggedIn = true;
+        window.localStorage.setItem('jwt', response.token);
+      } else if(response.errors) {
+        reject(response.errors);
+      }
+    });
   });
 };
 
@@ -16,8 +37,12 @@ user.loginEmailPass = ({ email, password }) => {
   return new Promise((resolve, reject) => {
     socket.emit('user:login', { email, password }, 
     response => {
-      console.log('got response', response);
-      resolve(response);
+      if ( response.status === 0 ) {
+        state.loggedIn = true;
+        window.localStorage.setItem('jwt', response.token);
+      } else {
+        reject(response);
+      }
     });
   });
 };

@@ -4,6 +4,7 @@ import { Route, Redirect, Switch } from 'react-router-dom';
 import { observer } from 'mobx-react';
 import state from 'services/state';
 import Dashboard from './layouts/Dashboard';
+import NewMatch from './layouts/NewMatch';
 
 const Wrapper = glamorous.div({
   display: 'flex',
@@ -19,6 +20,7 @@ const LoggedIn = () => {
       <Switch>
         {!state.loggedIn && (<Redirect to='/login' />)}
         <Route path='/dashboard' component={Dashboard} />
+        <Route path='/match/new' component={NewMatch} />
         <Redirect from='/' exact to='/dashboard'/>
         <Redirect to='/404' />
       </Switch>

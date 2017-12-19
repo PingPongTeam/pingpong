@@ -14,6 +14,7 @@ class SignupContainer extends Component {
       name: null,
       email: null,
       password: null,
+      errorMessage: null
     }
     this.state = {
       isLoading: false,
@@ -30,7 +31,7 @@ class SignupContainer extends Component {
     }));
   }
 
-  handleSignup({name: rawName, email: rawEmail, password: rawPassword}) {
+  async handleSignup({name: rawName, email: rawEmail, password: rawPassword}) {
     console.log('wat')
     this.setState(() => ({validationObject: this.defaultValidationObject}));
     const name = rawName.trim();
@@ -54,7 +55,20 @@ class SignupContainer extends Component {
     }
     if(passesValidation === false) { return; }
     this.setState(() => ({isLoading: true}));
-    user.create({ name, email, password });
+    try {
+      await user.create({ name, email, password });
+    } catch (errors) {
+      console.log('got errors', errors);
+      errors.forEach(error => {
+        switch (error.errorName) {
+          case 'EmailInUse':
+            this.setValidationState('errorMessage', 'emailInUse');
+          default:
+            break;
+        };
+      });
+    }
+    this.setState(() => ({isLoading: false}));
   }
 
   render() {

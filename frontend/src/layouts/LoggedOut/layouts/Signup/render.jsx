@@ -15,7 +15,8 @@ const SignupRender = ({
   validationObject: {
     name: nameError,
     email: emailError,
-    password: passwordError
+    password: passwordError,
+    errorMessage
   },
   isLoading
 }) => {
@@ -48,10 +49,19 @@ const SignupRender = ({
     }
   }
 
+  const getErrorMessage = error => {
+    switch (error) {
+      case 'emailInUse':
+        return 'Email already a member';
+      default:
+        return null;
+    }
+  }
+
   return (
     <div>
       <Title>Create an account</Title>
-      <Form onSubmit={handleSubmit}>
+      <Form onSubmit={handleSubmit} errorMessage={getErrorMessage(errorMessage)}>
         <Input
           label='name'
           type='text'
@@ -80,9 +90,11 @@ const SignupRender = ({
           Create account
         </Button>
       </Form>
-      <SecondaryButton style={{marginTop: '1.5em'}}>
-        <Link to='/'>sign in to existing account</Link>
-      </SecondaryButton>
+      <Link to='/'>
+        <SecondaryButton style={{marginTop: '1.5em'}}>
+          sign in to existing account
+        </SecondaryButton>
+      </Link>
     </div>
   )
 }

@@ -28,7 +28,7 @@ class App extends Component {
   render() {
     return (
       <Wrapper>
-        { !state.connectedToServer && navigator.onLine && (<h1>AAAAAHHH THE SERVER IS DOWN!!!</h1>)}
+        { !state.connectedToServer && this.state.hasConnection && (<h1>AAAAAHHH THE SERVER IS DOWN!!!</h1>)}
         { !this.state.hasConnection && (<h1>NO INTERNET</h1>)}
         { !state.initInProcess && (
             <Switch>

@@ -13,9 +13,9 @@ const Title = glamorous.h1({
 const SignupRender = ({
   handleSignin,
   validationObject: {
-    name: nameError,
     email: emailError,
-    password: passwordError
+    password: passwordError,
+    errorMessage
   },
   isLoading
 }) => {
@@ -47,10 +47,19 @@ const SignupRender = ({
     }
   }
 
+  const getErrorMessage = error => {
+    switch (error) {
+      case 'invalidUser':
+        return 'Invalid email or password';
+      default:
+        return null;
+    }
+  }
+
   return (
     <div>
       <Title>Sign in</Title>
-      <Form onSubmit={handleSubmit}>
+      <Form onSubmit={handleSubmit} errorMessage={getErrorMessage(errorMessage)}>
         <Input
           label='email'
           type='email'

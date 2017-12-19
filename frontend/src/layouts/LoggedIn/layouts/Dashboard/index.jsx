@@ -11,6 +11,7 @@ const Dashboard = () => {
   return (
     <div>
       <h1>INLOGGAD !</h1>
+      <Button>Starta en matchjävel då</Button>
     </div>
   )
 }

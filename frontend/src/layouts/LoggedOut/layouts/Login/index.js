@@ -12,6 +12,7 @@ class LoginContainer extends Component {
     this.defaultValidationObject = {
       email: null,
       password: null,
+      errorMessage: null
     }
     this.state = {
       isLoading: false,
@@ -29,9 +30,7 @@ class LoginContainer extends Component {
   }
 
   async handleSignin({email: rawEmail, password: rawPassword}) {
-    console.log('wat')
-    if(this.state.isLoading === true) return;
-    console.log('wat2')
+    if(this.state.isLoading === true) { return; }
     this.setState(() => ({validationObject: this.defaultValidationObject}));
     const email = rawEmail.trim();
     const password = rawPassword.trim();
@@ -48,10 +47,9 @@ class LoginContainer extends Component {
     this.setState(() => ({isLoading: true}));
     try {
       const response = await user.loginEmailPass({email, password});
-      
-    } catch (error) {
-      if ( error.status && error.status === 0 ) {
-        
+    } catch (response) {
+      if ( response.errors && response.errors[0].errorCode === 903 ) {
+        this.setValidationState('errorMessage', 'invalidUser');
       }
     }
     this.setState(() => ({ isLoading: false }));
