@@ -10,9 +10,6 @@ const log = common.log;
 const UserDb = require('./user_db.js');
 const userDb = new UserDb(r);
 
-// Serve static files
-app.use(express.static(path.join(__dirname, 'public')));
-
 io.on('connection', function onConnection(socket) {
 
   log("New connection from " + socket.request.connection.remoteAddress);
