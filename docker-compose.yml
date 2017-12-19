@@ -29,7 +29,7 @@ services:
 
   nodebackend:
     build:
-      context: ./pingpongbackend
+      context: ./backend
       args:
         - NODE_ENV=development
     container_name: nodebackend
@@ -43,7 +43,7 @@ services:
       - "5858:5858"
       - "9229:9229"
     volumes:
-      - ./pingpongbackend:/opt/app
+      - ./backend:/opt/app
       # this is to prevent host node_modules from accidently getting mounted in the container.
       # in case you want to use node or npm both outside container and also inside the container for test/lint etc
       # so this will overwrite the default node_modules dir in container so it won't conflict with our /opt/node_modules location

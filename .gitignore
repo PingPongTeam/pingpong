@@ -4,20 +4,20 @@
 */node_modules/*
 
 # testing
-pingpongfrontend/coverage
+frontend/coverage
 
 # production
-pingpongfrontend/build
+frontend/build
 
 # misc
-pingpongfrontend/.DS_Store
-pingpongfrontend/.env.local
-pingpongfrontend/.env.development.local
-pingpongfrontend/.env.test.local
-pingpongfrontend/.env.production.local
+frontend/.DS_Store
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
 
-pingpongfrontend/npm-debug.log*
-pingpongfrontend/yarn-debug.log*
-pingpongfrontend/yarn-error.log*
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
 
 db/data/*

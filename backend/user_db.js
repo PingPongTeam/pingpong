@@ -51,7 +51,7 @@ class UserDb {
     // TODO: Should verify that the email is a valid address
     var self = this;
     return new Promise(function(resolve, reject) {
-      self.r.table('users')
+      self.r.table('user')
           .filter({'email' : data.email})
           .run()
           .then(function(result) {
@@ -67,7 +67,7 @@ class UserDb {
               // Create a hashed password and insert user in db
 
               const passwordData = sha512(data.password, randomString(16));
-              return self.r.table('users')
+              return self.r.table('user')
                   .insert({
                     email : data.email,
                     name : data.name,
@@ -122,7 +122,7 @@ class UserDb {
 
         // Received email and password for authentication
 
-        self.r.table('users')
+        self.r.table('user')
             .filter({'email' : data.email})
             .run()
             .then(function(result) {
