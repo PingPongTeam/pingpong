@@ -161,6 +161,26 @@ class UserDb {
       }
     });
   }
+
+  // Return a list of users matching against the given fields
+  match(fields, filterReqexp)
+  {
+    let fetchAll = [];
+    for (let i = 0; i < fields.length; i++) {
+      let field = fields[i];
+      fetchAll.push(new Promise(function(fulfill, reject) {
+        r.table('user')
+            .filter(function(doc) { return doc(field).match(filterReqexp); })
+            .run()
+            .then(function(result) { fulfill(result); });
+      }));
+    }
+
+    return Promise.all(fetchAll).then(function(arrays) {
+      // Concat the arrays of arrays
+      return Promise.resolve([].concat.apply([], arrays));
+    });
+  }
 }
 
 module.exports = UserDb;

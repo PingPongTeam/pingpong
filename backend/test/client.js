@@ -27,4 +27,12 @@ socket.on('connect', function() {
           console.log("Result: " + JSON.stringify(result));
         });
       });
+
+  setTimeout(function() {
+    let searchEmail = email.substring(0, 13);
+    socket.emit('user:search', {filter: searchEmail}, function(result) {
+      console.log("Users starting with '" + searchEmail +
+                  "':" + JSON.stringify(result, null, 4));
+    });
+  }, 1000);
 });

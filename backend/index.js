@@ -15,6 +15,8 @@ io.on('connection', function onConnection(socket) {
   log("New connection from " + socket.request.connection.remoteAddress);
 
   socket.on('user:create', function(data, replyUser) {
+    // TODO: Should validate incomming parameter(s) here and return errors
+    // accordingly.
     userDb.create(data)
         .then(function({userId, token}) {
           socket.userId = userId;
@@ -27,7 +29,10 @@ io.on('connection', function onConnection(socket) {
           replyUser({status : 1, errors : errorArray});
         });
   });
+
   socket.on('user:login', function(data, replyUser) {
+    // TODO: Should validate incomming parameter(s) here and return errors
+    // accordingly.
     userDb.login(data)
         .then(function({userId, token}) {
           socket.userId = userId;
@@ -38,6 +43,24 @@ io.on('connection', function onConnection(socket) {
         .catch(function(errorArray) {
           log("User failed to login: " + JSON.stringify(errorArray));
           replyUser({status : 1, errors : errorArray});
+        });
+  });
+
+  // TODO: Commands to allow ONLY when a user is authenticated, so plz check auth ffs!
+  socket.on('user:search', function(data, replyUser) {
+    // TODO: Should validate incomming parameter(s) here and return errors
+    // accordingly.
+    userDb.match([ 'name', 'email' ], "^" + data.filter)
+        .then(function(users) {
+          // Only return specific fields of each user
+          users = users.map(function({email, id, name}) {
+            return {email, id, name};
+          });
+          replyUser(users);
+        })
+        .catch(function(error) {
+          log("Error searching for users: " + error);
+          replyUser({status : 1, errors : [ errorCode.internal ]});
         });
   });
 });
