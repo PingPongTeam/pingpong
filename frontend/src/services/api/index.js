@@ -16,7 +16,7 @@ if (process.env.BACKEND_PORT == null){
   backendPort = ':' + process.env.BACKEND_PORT;
 }
 
-backendHost = '10.10.50.121';
+// backendHost = '10.10.50.121';
 
 export const socket = io(backendHost + backendPort);
 
