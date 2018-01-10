@@ -15,6 +15,7 @@ const SignupRender = ({
   validationObject: {
     name: nameError,
     email: emailError,
+    alias: aliasError,
     password: passwordError,
     errorMessage
   },
@@ -25,8 +26,9 @@ const SignupRender = ({
     e.preventDefault();
     const name = e.target.name.value;
     const email = e.target.email.value;
+    const alias = e.target.alias.value;
     const password = e.target.password.value;
-    handleSignup({name, email, password});
+    handleSignup({name, email, alias, password});
   }
 
   const getErrorObject = code => {
@@ -53,6 +55,8 @@ const SignupRender = ({
     switch (error) {
       case 'emailInUse':
         return 'Email already a member';
+      case 'aliasInUse':
+        return 'Alias is already in use';
       default:
         return null;
     }
@@ -75,6 +79,13 @@ const SignupRender = ({
           name='email'
           status={emailError && getErrorObject(emailError).status}
           notice={emailError && getErrorObject(emailError).text}
+        />
+        <Input
+          label='alias'
+          type='alias'
+          name='alias'
+          status={aliasError && getErrorObject(aliasError).status}
+          notice={aliasError && getErrorObject(aliasError).text}
         />
         <Input
           label='password'
