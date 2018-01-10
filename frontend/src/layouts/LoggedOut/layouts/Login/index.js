@@ -1,10 +1,9 @@
-import { Component } from 'react';
-import Render from './render';
-import { socket } from 'services/api';
-import { user } from 'services/api/user';
+import { Component } from "react";
+import Render from "./render";
+import { socket } from "services/api";
+import { user } from "services/api/user";
 
 class LoginContainer extends Component {
-
   constructor() {
     super();
     this.handleSignin = this.handleSignin.bind(this);
@@ -13,43 +12,48 @@ class LoginContainer extends Component {
       email: null,
       password: null,
       errorMessage: null
-    }
+    };
     this.state = {
       isLoading: false,
       validationObject: this.defaultValidationObject
-    }
-    socket.on('user:signin', (message) => {
-      console.log('user:signup response from backend', message)
+    };
+    socket.on("user:signin", message => {
+      console.log("user:signup response from backend", message);
     });
   }
 
   setValidationState(input, statusCode) {
-    this.setState((prevState) => ({
-      validationObject: {...prevState.validationObject, [input]: statusCode}
+    this.setState(prevState => ({
+      validationObject: { ...prevState.validationObject, [input]: statusCode }
     }));
   }
 
-  async handleSignin({email: rawEmail, password: rawPassword}) {
-    if(this.state.isLoading === true) { return; }
-    this.setState(() => ({validationObject: this.defaultValidationObject}));
+  async handleSignin({ email: rawEmail, password: rawPassword }) {
+    if (this.state.isLoading === true) {
+      return;
+    }
+    this.setState(() => ({ validationObject: this.defaultValidationObject }));
     const email = rawEmail.trim();
     const password = rawPassword.trim();
     let passesValidation = true;
-    if(email.length < 1) {
-      this.setValidationState('email', 'required');
+    if (email.length < 1) {
+      this.setValidationState("email", "required");
       passesValidation = false;
     }
-    if(password.length < 1) {
-      this.setValidationState('password', 'required');
+    if (password.length < 1) {
+      this.setValidationState("password", "required");
       passesValidation = false;
     }
-    if(passesValidation === false) { return; }
-    this.setState(() => ({isLoading: true}));
+    if (passesValidation === false) {
+      return;
+    }
+    this.setState(() => ({ isLoading: true }));
     try {
-      const response = await user.loginEmailPass({email, password});
+      const response = await user.loginEmailPass({ email, password });
     } catch (response) {
-      if ( response.errors && response.errors[0].errorCode === 903 ) {
-        this.setValidationState('errorMessage', 'invalidUser');
+      if (response.errors && response.errors[0].errorCode === 903) {
+        this.setValidationState("errorMessage", "invalidUser");
+        console.log("invalid user error");
       }
     }
     this.setState(() => ({ isLoading: false }));
@@ -62,6 +66,6 @@ class LoginContainer extends Component {
       isLoading: this.state.isLoading
     });
   }
-};
+}
 
 export default LoginContainer;

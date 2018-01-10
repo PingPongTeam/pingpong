@@ -1,13 +1,13 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import glamorous from 'glamorous';
-import Form from 'components/Form';
-import Input from 'components/Input';
-import Button from 'components/Button';
-import SecondaryButton from 'components/SecondaryButton';
+import React from "react";
+import { Link } from "react-router-dom";
+import glamorous from "glamorous";
+import Form from "components/Form";
+import Input from "components/Input";
+import Button from "components/Button";
+import SecondaryButton from "components/SecondaryButton";
 
 const Title = glamorous.h1({
-  textAlign: 'center'
+  textAlign: "center"
 });
 
 const SignupRender = ({
@@ -19,75 +19,74 @@ const SignupRender = ({
   },
   isLoading
 }) => {
-
   const handleSubmit = e => {
     e.preventDefault();
     const email = e.target.email.value;
     const password = e.target.password.value;
     handleSignin({ email, password });
-  }
+  };
 
   const getErrorObject = code => {
     switch (code) {
-      case 'required':
+      case "required":
         return {
-          status: 'danger',
-          text: 'required'
-        }
-      case 'wrong':
+          status: "danger",
+          text: "required"
+        };
+      case "wrong":
         return {
-          status: 'danger',
-          text: 'WROOOONG!'
-        }
+          status: "danger",
+          text: "WROOOONG!"
+        };
       default:
         return {
-          status: 'danger',
-          text: 'unknown error'
-        }
+          status: "danger",
+          text: "unknown error"
+        };
     }
-  }
+  };
 
   const getErrorMessage = error => {
     switch (error) {
-      case 'invalidUser':
-        return 'Invalid email or password';
+      case "invalidUser":
+        return "Invalid email or password";
       default:
         return null;
     }
-  }
+  };
 
   return (
     <div>
       <Title>Sign in</Title>
-      <Form onSubmit={handleSubmit} errorMessage={getErrorMessage(errorMessage)}>
+      <Form
+        onSubmit={handleSubmit}
+        errorMessage={getErrorMessage(errorMessage)}
+      >
         <Input
-          label='email'
-          type='email'
-          name='email'
+          label="email"
+          type="email"
+          name="email"
           status={emailError && getErrorObject(emailError).status}
           notice={emailError && getErrorObject(emailError).text}
         />
         <Input
-          label='password'
-          type='password'
-          name='password'
+          label="password"
+          type="password"
+          name="password"
           status={passwordError && getErrorObject(passwordError).status}
           notice={passwordError && getErrorObject(passwordError).text}
         />
-        <Button
-          style={{marginTop: '1em'}}
-          loading={isLoading}
-        >
+        <Button style={{ marginTop: "1em" }} loading={isLoading}>
           Sign in
         </Button>
       </Form>
-      <Link to='/signup'>
-        <SecondaryButton style={{marginTop: '1.5em'}}>
+      <Link to="/signup">
+        <SecondaryButton style={{ marginTop: "1.5em" }}>
           Create a new account
         </SecondaryButton>
       </Link>
     </div>
-  )
-}
+  );
+};
 
 export default SignupRender;
