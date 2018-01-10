@@ -13,6 +13,7 @@ class SignupContainer extends Component {
     this.defaultValidationObject = {
       name: null,
       email: null,
+      alias: null,
       password: null,
       errorMessage: null
     }
@@ -31,11 +32,12 @@ class SignupContainer extends Component {
     }));
   }
 
-  async handleSignup({name: rawName, email: rawEmail, password: rawPassword}) {
+  async handleSignup({name: rawName, email: rawEmail, alias: rawAlias, password: rawPassword}) {
     console.log('wat')
     this.setState(() => ({validationObject: this.defaultValidationObject}));
     const name = rawName.trim();
     const email = rawEmail.trim();
+    const alias = rawAlias.trim();
     const password = rawPassword.trim();
     let passesValidation = true;
     if(name.length < 1) {
@@ -49,6 +51,10 @@ class SignupContainer extends Component {
       this.setValidationState('email', 'invalidEmail');
       passesValidation = false;
     }
+    if(alias.length < 1) {
+      this.setValidationState('alias', 'required');
+      passesValidation = false;
+    }
     if(password.length < 1) {
       this.setValidationState('password', 'required');
       passesValidation = false;
@@ -56,13 +62,17 @@ class SignupContainer extends Component {
     if(passesValidation === false) { return; }
     this.setState(() => ({isLoading: true}));
     try {
-      await user.create({ name, email, password });
+      await user.create({ name, email, alias, password });
     } catch (errors) {
       console.log('got errors', errors);
       errors.forEach(error => {
         switch (error.errorName) {
           case 'EmailInUse':
             this.setValidationState('errorMessage', 'emailInUse');
+            break;
+          case 'AliasInUse':
+            this.setValidationState('errorMessage', 'aliasInUse');
+            break;
           default:
             break;
         };
@@ -70,7 +80,7 @@ class SignupContainer extends Component {
     }
     this.setState(() => ({isLoading: false}));
   }
-
+  
   render() {
     return Render({
       handleSignup: this.handleSignup,

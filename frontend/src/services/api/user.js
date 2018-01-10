@@ -18,10 +18,10 @@ user.search = ({ searchTerm }) => {
   });
 };
 
-user.create = ({ name, email, password }) => {
+user.create = ({ name, email, alias, password }) => {
   return new Promise((resolve, reject) => {
     socket.emit('user:create',
-    { name, email, password },
+    { name, email, alias, password },
     response => {
       if ( response.status === 0 ) {
         state.loggedIn = true;
