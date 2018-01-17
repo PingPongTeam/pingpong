@@ -9,23 +9,35 @@ html {
   text-rendering: optimizeLegibility;
   line-height: normal;
 }
-body, #root {
+body,
+#root {
   background-color: inherit;
   width: inherit;
   height: inherit;
 }
-input, textarea, button {
+input,
+textarea,
+button {
   border: 0;
 }
-select, input, button {
+select,
+input,
+button {
   font-family: 'Open Sans', 'helvetica neue', helvetica, arial, sans-serif;
   line-height: initial;
 }
-*:focus, * { outline: 0; }
+*:focus,
+* {
+  outline: 0;
+}
 * {
   box-sizing: border-box;
 }
 a {
   text-decoration: none;
   color: inherit;
+}
+h1 {
+  font-size: 34px;
+  font-weight: 300;
 }

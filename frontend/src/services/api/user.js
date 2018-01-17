@@ -5,13 +5,11 @@ export const user = {};
 
 user.search = ({ searchTerm }) => {
   return new Promise((resolve, reject) => {
-    socket.emit('user:search',
-    { searchTerm },
-    response => {
-      if ( response.status === 0 ) {
+    socket.emit('user:search', { searchTerm }, response => {
+      if (response.status === 0) {
         state.loggedIn = true;
         window.localStorage.setItem('jwt', response.token);
-      } else if(response.errors) {
+      } else if (response.errors) {
         reject(response.errors);
       }
     });
@@ -20,13 +18,11 @@ user.search = ({ searchTerm }) => {
 
 user.create = ({ name, email, alias, password }) => {
   return new Promise((resolve, reject) => {
-    socket.emit('user:create',
-    { name, email, alias, password },
-    response => {
-      if ( response.status === 0 ) {
+    socket.emit('user:create', { name, email, alias, password }, response => {
+      if (response.status === 0) {
         state.loggedIn = true;
         window.localStorage.setItem('jwt', response.token);
-      } else if(response.errors) {
+      } else if (response.errors) {
         reject(response.errors);
       }
     });
@@ -35,9 +31,8 @@ user.create = ({ name, email, alias, password }) => {
 
 user.loginEmailPass = ({ email, password }) => {
   return new Promise((resolve, reject) => {
-    socket.emit('user:login', { email, password }, 
-    response => {
-      if ( response.status === 0 ) {
+    socket.emit('user:login', { email, password }, response => {
+      if (response.status === 0) {
         state.loggedIn = true;
         window.localStorage.setItem('jwt', response.token);
       } else {
@@ -52,11 +47,11 @@ user.loginToken = () => {
     'user:login',
     { token: window.localStorage.getItem('jwt') },
     response => {
-      if ( response.status === 0 ) {
+      if (response.status === 0) {
         state.loggedIn = true;
-      } else if ( response.status === 1 ) {
+      } else if (response.status === 1) {
         state.loggedIn = false;
-        if ( response.errors && response.errors[0].errorCode === 902 ) {
+        if (response.errors && response.errors[0].errorCode === 902) {
           window.localStorage.removeItem('jwt');
         }
       }

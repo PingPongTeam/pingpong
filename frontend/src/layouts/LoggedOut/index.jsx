@@ -11,17 +11,18 @@ const Wrapper = glamorous.div({
   alignItems: 'center',
   justifyContent: 'center',
   width: '100%',
-  height: '100%'
-})
+  minHeight: '100%',
+  padding: '10% 1%'
+});
 
 const LoggedOut = () => {
   return (
     <Wrapper>
       <Switch>
-        {state.loggedIn && (<Redirect to='/dashboard' />)}
-        <Route path='/login' component={Login} />
-        <Route path='/signup' exact component={Signup} />
-        <Redirect to='/404' />
+        {state.loggedIn && <Redirect to="/dashboard" />}
+        <Route path="/login" component={Login} />
+        <Route path="/signup" exact component={Signup} />
+        <Redirect to="/404" />
       </Switch>
     </Wrapper>
   );

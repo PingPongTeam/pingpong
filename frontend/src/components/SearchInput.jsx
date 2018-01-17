@@ -1,18 +1,26 @@
 import React from 'react';
+import { css } from 'glamor';
 import glamorous from 'glamorous';
 import globalStyles from 'globalStyles';
 
-const Wrapper = glamorous.div({});
+const Wrapper = glamorous.div({
+  maxWidth: '100%',
+  overflow: 'hidden'
+});
 const InputWrapper = glamorous.div({
   display: 'flex',
   alignItems: 'center',
   marginBottom: '15px'
 });
-const StyledInput = glamorous.input({
+const styledInput = css({
   color: `rgb(${globalStyles.colors.black})`,
-  fontSize: '24px',
+  fontSize: '22px',
   marginLeft: '10px',
-  minWidth: '330px'
+  width: '100%',
+  '::placeholder': {
+    fontWeight: 100,
+    textTransform: 'uppercase'
+  }
 });
 const searchIcon = (
   <svg
@@ -31,10 +39,13 @@ const searchIcon = (
   </svg>
 );
 const Results = glamorous.div({
-  width: '100%'
+  width: '100%',
+  overflow: 'hidden'
 });
-const ResultItem = glamorous.div({
+const resultItem = css({
   fontSize: '54px',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
   padding: '15px 5px',
   ':hover': {
     backgroundColor: `rgba(${globalStyles.colors.black}, .05)`
@@ -44,7 +55,12 @@ const ResultItem = glamorous.div({
   }
 });
 
-const SearchInputRender = ({ searchResult, onChange, onResultClick }) => {
+const SearchInputRender = ({
+  searchResult,
+  onChange,
+  onResultClick,
+  placeholder
+}) => {
   const handleInputChange = e => {
     const searchString = e.target.value;
     onChange(searchString);
@@ -58,21 +74,53 @@ const SearchInputRender = ({ searchResult, onChange, onResultClick }) => {
       onResultClick(result);
     }
   };
+  const handleResultKeyDown = (e, result, index) => {
+    const keyPressed = e.key;
+    if (keyPressed === 'ArrowDown' && resultRefs[index + 1]) {
+      resultRefs[index + 1].focus();
+    }
+    if (keyPressed === 'ArrowUp') {
+      const prevIndex = index - 1;
+      if (prevIndex < 0) {
+        searchInputRef.focus();
+        return;
+      }
+      resultRefs[index - 1].focus();
+    }
+  };
+  const inputKeyDown = e => {
+    const keyPressed = e.key;
+    if (keyPressed === 'ArrowDown' && resultRefs[0]) {
+      resultRefs[0].focus();
+    }
+  };
+
+  let searchInputRef;
+  let resultRefs = [];
 
   return (
     <Wrapper>
       <InputWrapper>
         {searchIcon}
-        <StyledInput
+        <input
+          className={styledInput}
+          ref={ref => {
+            searchInputRef = ref;
+          }}
           type="search"
-          placeholder="SEARCH FOR AN OPPONENT"
+          placeholder={placeholder}
           onChange={handleInputChange}
+          onKeyDown={inputKeyDown}
         />
       </InputWrapper>
       {searchResult && (
         <Results>
           {searchResult.map((result, index) => (
-            <ResultItem
+            <div
+              className={resultItem}
+              ref={ref => {
+                resultRefs.push(ref);
+              }}
               key={index}
               tabIndex="0"
               onClick={() => {
@@ -81,9 +129,12 @@ const SearchInputRender = ({ searchResult, onChange, onResultClick }) => {
               onKeyUp={e => {
                 handleResultKeyUp(e, result);
               }}
+              onKeyDown={e => {
+                handleResultKeyDown(e, result, index);
+              }}
             >
               {result.text}
-            </ResultItem>
+            </div>
           ))}
         </Results>
       )}

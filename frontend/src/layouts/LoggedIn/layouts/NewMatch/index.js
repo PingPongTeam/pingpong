@@ -8,29 +8,52 @@ class NewMatchContainer extends Component {
     this.handleResultClick = this.handleResultClick.bind(this);
     this.state = {
       chosenOpponent: null,
-      searchResult: null
+      searchResult: null,
+      serverSearchResult: null
     };
   }
 
-  handleSearch(searchString) {
+  async handleSearch(searchString) {
+    console.log('currect search state:', this.state.searchResult);
     console.log('SEARCHING FOR:', searchString);
-    if (searchString.length > 2) {
+    if (searchString < 1) {
+      this.setState(() => ({ searchResult: null }));
+    }
+    if (this.state.searchResult && searchString.length > 1) {
+      const newReslut = this.state.serverSearchResult.filter(result => {
+        return result.text.toLowerCase().includes(searchString.toLowerCase());
+      });
+      this.setState(() => ({ searchResult: newReslut }));
+      return;
+    }
+    if (searchString.length > 1 && !this.state.searchResult) {
+      // try {
+      //   const serverResult = await user.search({seachTerm: searchString});
+      //   this.setState(() => ({
+      //     searchResult: serverResult,
+      //     serverSearchResult: serverResult
+      //   }));
+      // } catch (e) {
+      //   user.logout();
+      // }
       console.log('GOT RESPONSE');
+      const serverResult = [
+        {
+          text: 'OlleSandbög',
+          id: 1
+        },
+        {
+          text: 'OlleOllon',
+          id: 2
+        },
+        {
+          text: 'OllonFärs',
+          id: 3
+        }
+      ];
       this.setState(() => ({
-        searchResult: [
-          {
-            text: 'OlleSandbög',
-            id: 1
-          },
-          {
-            text: 'OlleOllon',
-            id: 2
-          },
-          {
-            text: 'OllonFärs',
-            id: 3
-          }
-        ]
+        searchResult: serverResult,
+        serverSearchResult: serverResult
       }));
     }
   }
