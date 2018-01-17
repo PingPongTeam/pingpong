@@ -9,8 +9,7 @@ user.search = ({ searchTerm }) => {
     { searchTerm },
     response => {
       if ( response.status === 0 ) {
-        state.loggedIn = true;
-        window.localStorage.setItem('jwt', response.token);
+        resolve(response.result);
       } else if(response.errors) {
         reject(response.errors);
       }
