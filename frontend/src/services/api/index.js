@@ -2,17 +2,10 @@ import io from 'socket.io-client';
 import state from 'services/state';
 import { user } from './user';
 
-let backendHost = process.env.BACKEND_HOST || 'localhost';
-let backendPort = ':' + process.env.BACKEND_PORT || ':3001';
+let backendHost = process.env.REACT_APP_BACKEND_HOST || 'localhost';
+let backendPort = process.env.REACT_APP_BACKEND_PORT || '3001';
 
-console.log('process.env:', process.env);
-console.log('Backend host:', process.env.BACKEND_HOST);
-console.log('Backend port:', process.env.BACKEND_PORT);
-
-// backendHost = '10.10.50.121';
-
-//export const socket = io(backendHost + backendPort);
-export const socket = io('localhost:3001');
+export const socket = io(backendHost + ':' + backendPort);
 
 socket.on('connect', () => {
   state.connectedToServer = true;

@@ -1,5 +1,5 @@
 # only use latest in dev environment, if you move this to production pin down the specific verision
-FROM node:9.3
+FROM node:9.7
 
 RUN mkdir -p /opt/app
 
