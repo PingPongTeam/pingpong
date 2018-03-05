@@ -1,10 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import glamorous from 'glamorous';
-import Form from 'components/Form';
-import Input from 'components/Input';
 import Button from 'components/Button';
-import SecondaryButton from 'components/SecondaryButton';
 
 const Wrapper = glamorous.div({
   width: '100%'

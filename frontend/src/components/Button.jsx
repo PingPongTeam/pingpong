@@ -5,11 +5,11 @@ import Spinner from 'components/Spinner';
 
 const StyledButton = glamorous.button({
   width: '100%',
-  borderTop: `1px dashed rgb(${globalStyles.colors.dinboxBlue})`,
+  borderTop: `1px dashed rgb(${globalStyles.colors.dinboxTurquoise})`,
   color: `rgb(${globalStyles.colors.dinboxBlue})`,
   backgroundColor: `rgb(${globalStyles.colors.white})`,
-  fontSize: '26px',
-  padding: globalStyles.inputPadding,
+  fontSize: '23px',
+  padding: '1.4em 1.5em',
   textTransform: 'uppercase',
   cursor: 'pointer',
   ':hover': {
@@ -28,7 +28,6 @@ const SpinnerWrapper = glamorous.div({
 
 const Button = ({ children, loading, ...rest }) => {
   const textOpacity = loading ? 0 : 1;
-  const spinnerColor = `rgb(${globalStyles.colors.dinboxBlue})`;
 
   return (
     <StyledButton {...rest}>

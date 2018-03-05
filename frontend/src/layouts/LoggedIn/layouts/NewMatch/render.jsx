@@ -43,7 +43,8 @@ const NewMatchRender = ({
   chosenOpponent,
   searchResult,
   handleSearch,
-  handleResultClick
+  handleResultClick,
+  handleStartMatch
 }) => {
   if (chosenOpponent) {
     return (
@@ -52,7 +53,7 @@ const NewMatchRender = ({
         <OpponentName>{chosenOpponent.text}</OpponentName>
         <TinyText>CURRENT TOTAL MATCH STATS</TinyText>
         <BottomControlWrapper>
-          <Button>Start game</Button>
+          <Button onClick={handleStartMatch}>Start game</Button>
           <CancelButton>
             <Link to="/">
               <SecondaryButton>Cancel</SecondaryButton>

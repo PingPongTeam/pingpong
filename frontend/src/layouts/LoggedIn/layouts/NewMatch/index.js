@@ -6,6 +6,7 @@ class NewMatchContainer extends Component {
     super(props);
     this.handleSearch = this.handleSearch.bind(this);
     this.handleResultClick = this.handleResultClick.bind(this);
+    this.handleStartMatch = this.handleStartMatch.bind(this);
     this.state = {
       chosenOpponent: null,
       searchResult: null,
@@ -58,6 +59,14 @@ class NewMatchContainer extends Component {
     }
   }
 
+  handleStartMatch() {
+    console.log('start match with', this.state.chosenOpponent);
+    this.props.history.push({
+      pathname: '/match/ongoing',
+      state: { opponent: this.state.chosenOpponent }
+    });
+  }
+
   handleResultClick(result) {
     this.setState(() => ({ chosenOpponent: result }));
     console.log('CLICKED RESULT:', result);
@@ -69,7 +78,8 @@ class NewMatchContainer extends Component {
       chosenOpponent,
       searchResult,
       handleSearch: this.handleSearch,
-      handleResultClick: this.handleResultClick
+      handleResultClick: this.handleResultClick,
+      handleStartMatch: this.handleStartMatch
     });
   }
 }

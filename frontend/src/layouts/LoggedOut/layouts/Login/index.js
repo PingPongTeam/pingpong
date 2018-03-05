@@ -1,7 +1,7 @@
-import { Component } from "react";
-import Render from "./render";
-import { socket } from "services/api";
-import { user } from "services/api/user";
+import { Component } from 'react';
+import Render from './render';
+import { socket } from 'services/api';
+import { user } from 'services/api/user';
 
 class LoginContainer extends Component {
   constructor() {
@@ -17,8 +17,8 @@ class LoginContainer extends Component {
       isLoading: false,
       validationObject: this.defaultValidationObject
     };
-    socket.on("user:signin", message => {
-      console.log("user:signup response from backend", message);
+    socket.on('user:signin', message => {
+      console.log('user:signup response from backend', message);
     });
   }
 
@@ -37,11 +37,11 @@ class LoginContainer extends Component {
     const password = rawPassword.trim();
     let passesValidation = true;
     if (email.length < 1) {
-      this.setValidationState("email", "required");
+      this.setValidationState('email', 'required');
       passesValidation = false;
     }
     if (password.length < 1) {
-      this.setValidationState("password", "required");
+      this.setValidationState('password', 'required');
       passesValidation = false;
     }
     if (passesValidation === false) {
@@ -49,11 +49,11 @@ class LoginContainer extends Component {
     }
     this.setState(() => ({ isLoading: true }));
     try {
-      const response = await user.loginEmailPass({ email, password });
-    } catch (response) {
-      if (response.errors && response.errors[0].errorCode === 903) {
-        this.setValidationState("errorMessage", "invalidUser");
-        console.log("invalid user error");
+      await user.loginEmailPass({ email, password });
+    } catch (errorResponse) {
+      if (errorResponse.errors && errorResponse.errors[0].errorCode === 903) {
+        this.setValidationState('errorMessage', 'invalidUser');
+        console.log('invalid user error');
       }
     }
     this.setState(() => ({ isLoading: false }));
