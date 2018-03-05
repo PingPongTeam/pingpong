@@ -41,7 +41,7 @@ function sha512(password, salt) {
 }
 
 // Validate create:user parameters
-function createUserValidate({ rdb }, data) {
+function createUserValidate({ pgp }, data) {
   return new Promise(function(fulfill, reject) {
     let errorArray = [];
 
@@ -61,8 +61,8 @@ function createUserValidate({ rdb }, data) {
       return reject(errorArray);
     }
     return Promise.all([
-      dbHelpers.columnValueCount(rdb, "user", { email: data.email }),
-      dbHelpers.columnValueCount(rdb, "user", { alias: data.alias })
+      dbHelpers.columnValueCount(pgp, "user", { email: data.email }),
+      dbHelpers.columnValueCount(pgp, "user", { alias: data.alias })
     ])
       .then(function(result) {
         if (result[0] > 0) {
@@ -89,18 +89,18 @@ function createUserValidate({ rdb }, data) {
 }
 
 // Create user
-function createUser({ rdb }, data) {
+function createUser({ pgp }, data) {
   // Create a hashed password and insert user in db
   return new Promise(function(fulfill, reject) {
     const passwordData = sha512(data.password, randomString(16));
-    return rdb
+    return pgp
       .table("user")
       .insert({
         email: data.email,
         name: data.name,
         alias: data.alias,
         passwordData: passwordData,
-        timeOfCreation: rdb.now()
+        timeOfCreation: pgp.now()
       })
       .run()
       .then(function(result) {
@@ -123,7 +123,7 @@ function createUser({ rdb }, data) {
 }
 
 // Validate create:user parameters
-function loginUserValidate({ rdb }, data) {
+function loginUserValidate({ pgp }, data) {
   let errorArray = [];
   if (!data.token) {
     errorArray.push({ hint: "token", error: errorCode.missingValue });
@@ -144,7 +144,7 @@ function loginUserValidate({ rdb }, data) {
   return Promise.reject(errorArray);
 }
 
-function loginUser({ rdb }, data) {
+function loginUser({ pgp }, data) {
   return new Promise(async function(fulfill, reject) {
     if (data.token) {
       // Received token for authentication
@@ -152,23 +152,39 @@ function loginUser({ rdb }, data) {
       jwt.verify(data.token, config.jwt.secret, function(err, decoded) {
         if (err) {
           log("Invalid token: " + JSON.stringify(err));
-          return reject([{hint: 'token', error: errorCode.invalidToken}]);
+          return reject([{ hint: "token", error: errorCode.invalidToken }]);
         } else {
           // Issue a (new) token to user
 
-          return newToken(decoded.userId, decoded.email).then(function(token) {
-            log("User '" + decoded.email + "' signed in. Return token.");
-            return fulfill({ userId: decoded.userId, token: token });
-          }).catch(function(error) {
-            log("Error creating token: " + error);
-          })
+          return newToken(decoded.userId, decoded.email)
+            .then(function(token) {
+              log("User '" + decoded.email + "' signed in. Return token.");
+              return fulfill({ userId: decoded.userId, token: token });
+            })
+            .catch(function(error) {
+              log("Error creating token: " + error);
+            });
         }
       });
     } else {
-      // Received email and password for authentication
-      log("Got auth");
-      let result = await dbHelpers.getAnyOf(
-          rdb, 'user', [ {email : data.auth}, {alias : data.auth} ]);
+      // Received alias/email and password for authentication
+      log("Got auth (auth='" + data.auth + "')");
+
+      pgp
+        .query("SELECT * FROM users WHERE email = $1", [data.auth])
+        .then(function(res) {
+          log("res=" + JSON.stringify(res));
+        })
+        .catch(function(err) {
+          log("err=" + JSON.stringify(err));
+          reject([{ hint: "auth", error: errorCode.internal }]);
+        });
+
+      return;
+      let result = await dbHelpers.getAnyOf(pgp, "user", [
+        { email: data.auth },
+        { alias: data.auth }
+      ]);
       if (result.length !== 0) {
         // Test if the supplied password is correct
 
@@ -186,7 +202,7 @@ function loginUser({ rdb }, data) {
         }
       } else {
         log("No such user: " + data.email);
-      }      
+      }
     }
   });
 }

@@ -3,9 +3,9 @@ const log = common.log;
 
 const helpers = {
   // Count number of occurrences of value in a column
-  columnValueCount: function(rdb, table, filter) {
+  columnValueCount: function(pgp, table, filter) {
     return new Promise(function(resolve, reject) {
-      rdb
+      pgp
         .table(table)
         .filter(filter)
         .run()
@@ -16,9 +16,9 @@ const helpers = {
     });
   },
 
-  getAnyOf: async function(rdb, table, columnValues) {
+  getAnyOf: async function(pgp, table, columnValues) {
     for (key of columnValues) {
-      const result = await rdb
+      const result = await pgp
         .table(table)
         .filter(key)
         .run();
