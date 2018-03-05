@@ -24,8 +24,8 @@ services:
       - notusedfront:/opt/app/node_modules
     environment:
       - NODE_ENV=development
-      - BACKEND_HOST=nodebackend
-      - BACKEND_PORT=3001
+      - REACT_APP_BACKEND_HOST=localhost
+      - REACT_APP_BACKEND_PORT=3001
       - PORT=3000
 
   nodebackend:
