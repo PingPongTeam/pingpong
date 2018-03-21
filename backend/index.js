@@ -63,10 +63,12 @@ function executeCommand({ socket, pgp, command }, data, reply) {
 io.on("connection", function onConnection(socket) {
   log("New connection from " + socket.request.connection.remoteAddress);
 
-  for (command of commandHandlers) {
-    socket.on(command.name, (data, reply) =>
-      executeCommand({ socket, pgp, command }, data, reply)
-    );
+  // Register command handlers
+  for (let i = 0; i < commandHandlers.length; i++) {
+    let command = commandHandlers[i];
+    socket.on(command.name, (data, reply) => {
+      executeCommand({ socket, pgp, command }, data, reply);
+    });
   }
 });
 
