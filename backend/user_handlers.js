@@ -58,33 +58,10 @@ function createUserValidate({ pgp }, data) {
       errorArray.push({ hint: "password", error: errorCode.invalidValue });
     }
     if (errorArray.length > 0) {
+      log("Error1");
       return reject(errorArray);
     }
-    return Promise.all([
-      dbHelpers.columnValueCount(pgp, "user", { email: data.email }),
-      dbHelpers.columnValueCount(pgp, "user", { alias: data.alias })
-    ])
-      .then(function(result) {
-        if (result[0] > 0) {
-          errorArray.push({
-            hint: "email",
-            error: errorCode.inUse
-          });
-        }
-        if (result[1] > 0) {
-          errorArray.push({
-            hint: "alias",
-            error: errorCode.inUse
-          });
-        }
-        if (errorArray.length > 0) {
-          return reject(errorArray);
-        }
-        return fulfill();
-      })
-      .catch(function(error) {
-        reject([{ error: errorCode.internal }]);
-      });
+    return fulfill();
   });
 }
 
@@ -92,17 +69,23 @@ function createUserValidate({ pgp }, data) {
 function createUser({ pgp }, data) {
   // Create a hashed password and insert user in db
   return new Promise(function(fulfill, reject) {
-    const passwordData = sha512(data.password, randomString(16));
-    return pgp
-      .table("user")
-      .insert({
-        email: data.email,
-        name: data.name,
-        alias: data.alias,
-        passwordData: passwordData,
-        timeOfCreation: pgp.now()
-      })
-      .run()
+    const passwd = sha512(data.password, randomString(16));
+    log("Create user...");
+    return pgp.query(
+      "INSERT into users(email, alias, name, passwdHash, passwdSalt) VALUES " +
+        "($1, $2, $3, $4, $5) RETURNING id;",
+      [data.email, data.alias, data.name, passwd.passwordHash, passwd.salt],
+      (err, result) => {
+        if (err) {
+          log("Error creating user: " + JSON.stringify(err));
+          return Promise.reject(new Error(result.first_error));
+        } else {
+          log("Created user: " + result);
+          return fulfill({ userId, token });
+        }
+      }
+    );
+    /*
       .then(function(result) {
         if (result.errors) {
           log("Error creating user: " + JSON.stringify(result));
@@ -118,7 +101,7 @@ function createUser({ pgp }, data) {
       .catch(function(error) {
         log("Error creating user (" + data + "): " + error);
         reject([{ error: errorCode.internal }]);
-      });
+      });*/
   });
 }
 
@@ -207,6 +190,14 @@ function loginUser({ pgp }, data) {
   });
 }
 
+function searchUserValidate({ rdb }, data) {
+  return Promise.resolve();
+}
+
+function searchUser({ rdb }, data) {
+  return Promise.resolve();
+}
+
 const handlers = [
   {
     name: "user:create",
@@ -219,6 +210,12 @@ const handlers = [
     mustBeAuthed: false,
     validate: loginUserValidate,
     handler: loginUser
+  },
+  {
+    name: "user:search",
+    mustBeAuthed: true,
+    validate: searchUserValidate,
+    handler: searchUser
   }
 ];
 
