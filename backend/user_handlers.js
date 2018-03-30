@@ -46,9 +46,11 @@ function createUserValidate({ pgp }, data) {
     let errorArray = [];
 
     if (!data.alias || data.alias.length < 2) {
+      // TODO: Ensure that alias is restricted to specified characters
       errorArray.push({ hint: "alias", error: errorCode.invalidValue });
     }
     if (!data.email || data.email.length < 2) {
+      // TODO: Ensure that email is an actual email address
       errorArray.push({ hint: "email", error: errorCode.invalidValue });
     }
     if (!data.name || data.name.length < 2) {
@@ -58,7 +60,6 @@ function createUserValidate({ pgp }, data) {
       errorArray.push({ hint: "password", error: errorCode.invalidValue });
     }
     if (errorArray.length > 0) {
-      log("Error1");
       return reject(errorArray);
     }
     return fulfill();
@@ -70,42 +71,37 @@ function createUser({ pgp }, data) {
   // Create a hashed password and insert user in db
   return new Promise(function(fulfill, reject) {
     const passwd = sha512(data.password, randomString(16));
-    log("Create user...");
     return pgp.query(
       "INSERT into users(email, alias, name, passwdHash, passwdSalt) VALUES " +
         "($1, $2, $3, $4, $5) RETURNING id;",
       [data.email, data.alias, data.name, passwd.passwordHash, passwd.salt],
       (err, result) => {
         if (err) {
-          log("Error creating user: " + JSON.stringify(err));
-          return Promise.reject(new Error(result.first_error));
+          // TODO: Can we detect if both email and/or alias is in use
+          // in one query? Now the first one detected is reflected in the error.
+          if (err.code === "23505") {
+            // Some value is not unique
+            let valueName =
+              err.constraint === "users_alias_key" ? "alias" : "email";
+            return reject([{ hint: valueName, error: errorCode.inUse }]);
+          } else {
+            log("unhandled db error: " + JSON.stringify(err));
+            return reject([{ error: errorCode.internal }]);
+          }
         } else {
-          log("Created user: " + result);
-          return fulfill({ userId, token });
-        }
-      }
-    );
-    /*
-      .then(function(result) {
-        if (result.errors) {
-          log("Error creating user: " + JSON.stringify(result));
-          return Promise.reject(new Error(result.first_error));
-        } else {
-          const userId = result.generated_keys[0];
+          // User was created - Generate token and return
+          let userId = result.rows[0].id;
           return newToken(userId, data.email).then(function(token) {
             log("Created user " + data.alias + " (" + userId + ")");
             return fulfill({ userId, token });
           });
         }
-      })
-      .catch(function(error) {
-        log("Error creating user (" + data + "): " + error);
-        reject([{ error: errorCode.internal }]);
-      });*/
+      }
+    );
   });
 }
 
-// Validate create:user parameters
+// Validate login:user parameters
 function loginUserValidate({ pgp }, data) {
   let errorArray = [];
   if (!data.token) {
@@ -123,7 +119,6 @@ function loginUserValidate({ pgp }, data) {
   } else {
     return Promise.resolve();
   }
-
   return Promise.reject(errorArray);
 }
 
