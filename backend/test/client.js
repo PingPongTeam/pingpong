@@ -28,21 +28,30 @@ socket.on("connect", function() {
       alias: "myalias" + randstr
     },
     function(result) {
-      console.log("Result: " + JSON.stringify(result));
+      console.log("user:create - Result: " + JSON.stringify(result));
 
       socket.emit(
         "user:login",
         { auth: email, password: "WithAVeryGoodPassword" },
         function(result) {
-          console.log("Result: " + JSON.stringify(result));
+          console.log("user:login - Result: " + JSON.stringify(result));
         }
       );
 
       socket.emit("user:login", { token: result.token }, function(result) {
-        console.log("Result: " + JSON.stringify(result));
+        console.log("user:login - Result: " + JSON.stringify(result));
       });
     }
   );
+  setTimeout(function() {
+    socket.emit(
+      "user:login",
+      { auth: "someInvalidUser", password: "whatever" },
+      function(result) {
+        console.log("user:login - Result: " + JSON.stringify(result));
+      }
+    );
+  }, 500);
 
   setTimeout(function() {
     let searchEmail = email.substring(0, 13);

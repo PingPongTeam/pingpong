@@ -149,38 +149,43 @@ function loginUser({ pgp }, data) {
       log("Got auth (auth='" + data.auth + "')");
 
       pgp
-        .query("SELECT * FROM users WHERE email = $1", [data.auth])
+        .query(
+          "SELECT id, email, passwdhash, passwdsalt" +
+            " FROM users WHERE email = $1 OR alias = $1",
+          [data.auth]
+        )
         .then(function(res) {
-          log("res=" + JSON.stringify(res));
+          if (res.rowCount === 1) {
+            // Found user - Test if the supplied password is correct
+            const row = res.rows[0];
+            const incomming = sha512(data.password, row.passwdsalt);
+            if (incomming.passwordHash === row.passwdhash) {
+              // Return a new token to the verified user
+              return newToken(row.id, row.email).then(function(token) {
+                log("User '" + row.email + "' signed in. Return token.");
+                return fulfill({ userId: row.id, token });
+              });
+            } else {
+              log("Invalid password for user: " + data.email);
+              return reject([{ hint: "auth", error: errorCode.invalidUser }]);
+            }
+          } else if (res.rowCount === 0) {
+            // No such user
+            return reject([{ hint: "auth", error: errorCode.invalidUser }]);
+          } else {
+            // DB returned multiple columns (shouldn't occur)!?
+            log(
+              "Multiple matches on auth (" + data.auth + "): " + res.rowCount
+            );
+            return reject([{ hint: "auth", error: errorCode.internal }]);
+          }
         })
         .catch(function(err) {
-          log("err=" + JSON.stringify(err));
-          reject([{ hint: "auth", error: errorCode.internal }]);
+          log(
+            "db error (" + JSON.stringify(data) + "): " + JSON.stringify(err)
+          );
+          return reject([{ hint: "auth", error: errorCode.internal }]);
         });
-
-      return;
-      let result = await dbHelpers.getAnyOf(pgp, "user", [
-        { email: data.auth },
-        { alias: data.auth }
-      ]);
-      if (result.length !== 0) {
-        // Test if the supplied password is correct
-
-        const user = result[0];
-        const passwordData = sha512(data.password, user.passwordData.salt);
-        if (passwordData.passwordHash === user.passwordData.passwordHash) {
-          // Return a new token to the verified user
-
-          return newToken(user.id, data.email).then(function(token) {
-            log("User '" + data.email + "' signed in. Return token.");
-            fulfill({ userId: user.id, token });
-          });
-        } else {
-          log("Invalid password for user: " + data.email);
-        }
-      } else {
-        log("No such user: " + data.email);
-      }
     }
   });
 }
