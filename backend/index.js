@@ -26,19 +26,20 @@ const commandHandlers = [].concat(userHandlers);
 log("Connecting to " + config.db.uri);
 const pgp = new Pool({ connectionString: config.db.uri });
 
-function executeCommand({ socket, pgp, command }, data, reply) {
+function executeCommand(userContext, command, data, reply) {
   log("Incomming '" + command.name + "' request");
 
-  if (command.mustBeAuthed && !socket.token) {
-    // TODO: Reply error
+  if (command.mustBeAuthed && !userContext.authed) {
+    // Not allowed to execute this command
+    return reply({ status: 1, errors: [{ error: errorCode.notAllowed }] });
   }
 
   command
-    .validate({ socket, pgp, command }, data)
+    .validate(userContext, data)
     .then(function() {
       // Parameters was valid - Execute the handler
       log("'" + command.name + "' parameters was valid");
-      return command.handler({ socket, pgp, command }, data);
+      return command.handler(userContext, data);
     })
     .then(function(result) {
       log("'" + command.name + "' was executed succesfully");
@@ -61,13 +62,14 @@ function executeCommand({ socket, pgp, command }, data, reply) {
 }
 
 io.on("connection", function onConnection(socket) {
+  let userContext = { socket: socket, authed: false, pgp: pgp };
   log("New connection from " + socket.request.connection.remoteAddress);
 
   // Register command handlers
   for (let i = 0; i < commandHandlers.length; i++) {
     let command = commandHandlers[i];
     socket.on(command.name, (data, reply) => {
-      executeCommand({ socket, pgp, command }, data, reply);
+      executeCommand(userContext, command, data, reply);
     });
   }
 });

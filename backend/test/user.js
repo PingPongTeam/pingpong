@@ -232,6 +232,19 @@ describe("user:search", () => {
     socket.close();
   });
 
+  it("Login user", done => {
+    socket.emit(
+      "user:login",
+      {
+        auth: "searchUser_1",
+        password: "StupidPassword"
+      },
+      result => {
+        done();
+      }
+    );
+  });
+
   it("Match 10 existing users", done => {
     socket.emit(
       "user:search",
@@ -288,6 +301,30 @@ describe("user:search", () => {
         assert(result.errors[0].hint === "aliasOrEmail", "Unexpected hint");
         assert(
           result.errors[0].error.errorName === "InvalidValue",
+          "Unexpected error"
+        );
+        done();
+      }
+    );
+  });
+
+  it("Logout user", done => {
+    socket.emit("user:logout", {}, result => {
+      assert(result.status === 0, "Unexpected status");
+      done();
+    });
+  });
+
+  it("Search while not logged in", done => {
+    socket.emit(
+      "user:search",
+      {
+        aliasOrEmail: "searchUser"
+      },
+      result => {
+        assert(result.status === 1, "Unexpected status");
+        assert(
+          result.errors[0].error.errorName === "NotAllowed",
           "Unexpected error"
         );
         done();

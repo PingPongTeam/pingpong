@@ -77,8 +77,17 @@ function createUserValidate(ctx, data) {
   return Promise.resolve();
 }
 
-// Create user
-function createUser({ pgp }, data) {
+function markAuthed(userContext, alias, email, userId, token) {
+  userContext.authed = true;
+  userContext.token = token;
+  userContext.userId = userId;
+  userContext.userDesc = "[" + email + "]";
+  log(userContext.userDesc + " signed in");
+}
+
+// Create user'
+function createUser(userContext, data) {
+  let pgp = userContext.pgp;
   // Create a hashed password and insert user in db
   return new Promise(function(fulfill, reject) {
     const passwd = sha512(data.password, randomString(16));
@@ -104,6 +113,7 @@ function createUser({ pgp }, data) {
           let userId = result.rows[0].id;
           return newToken(userId, data.email).then(function(token) {
             log("Created user " + data.alias + " (" + userId + ")");
+            markAuthed(userContext, data.alias, data.email, userId, token);
             return fulfill({ userId, token });
           });
         }
@@ -133,25 +143,48 @@ function loginUserValidate(ctx, data) {
   return Promise.reject(errorArray);
 }
 
-function loginUser({ pgp }, data) {
+function loginUser(userContext, data) {
+  let pgp = userContext.pgp;
   return new Promise(async function(fulfill, reject) {
     if (data.token) {
       // Received token for authentication
-      log("Got token");
       jwt.verify(data.token, config.jwt.secret, function(err, decoded) {
         if (err) {
           log("Invalid token: " + JSON.stringify(err));
           return reject([{ hint: "token", error: errorCode.invalidToken }]);
         } else {
-          // Issue a (new) token to user
-
-          return newToken(decoded.userId, decoded.email)
-            .then(function(token) {
-              log("User '" + decoded.email + "' signed in. Return token.");
-              return fulfill({ userId: decoded.userId, token: token });
+          // Ensure that user exists in db
+          pgp
+            .query(
+              "SELECT id, email, alias, passwdhash, passwdsalt" +
+                " FROM users WHERE id = $1",
+              [decoded.userId]
+            )
+            .then(res => {
+              if (res.rowCount !== 1) {
+                return reject([
+                  { hint: "token", error: errorCode.invalidUser }
+                ]);
+              } else {
+                let row = res.rows[0];
+                return newToken(row.id, row.email)
+                  .then(function(token) {
+                    markAuthed(
+                      userContext,
+                      row.alias,
+                      row.email,
+                      row.id,
+                      token
+                    );
+                    return fulfill({ userId: decoded.userId, token: token });
+                  })
+                  .catch(function(error) {
+                    log("Error creating token: " + error);
+                  });
+              }
             })
-            .catch(function(error) {
-              log("Error creating token: " + error);
+            .catch(err => {
+              return reject([{ hint: "token", error: errorCode.internal }]);
             });
         }
       });
@@ -161,7 +194,7 @@ function loginUser({ pgp }, data) {
 
       pgp
         .query(
-          "SELECT id, email, passwdhash, passwdsalt" +
+          "SELECT id, email, alias, passwdhash, passwdsalt" +
             " FROM users WHERE email = $1 OR alias = $1",
           [data.auth]
         )
@@ -173,11 +206,12 @@ function loginUser({ pgp }, data) {
             if (incomming.passwordHash === row.passwdhash) {
               // Return a new token to the verified user
               return newToken(row.id, row.email).then(function(token) {
-                log("User '" + row.email + "' signed in. Return token.");
+                // Mark user as authed and signed in
+                markAuthed(userContext, row.alias, row.email, row.id, token);
                 return fulfill({ userId: row.id, token });
               });
             } else {
-              log("Invalid password for user: " + data.email);
+              log("Invalid password for user: " + data.auth);
               return reject([{ hint: "auth", error: errorCode.invalidUser }]);
             }
           } else if (res.rowCount === 0) {
@@ -199,6 +233,21 @@ function loginUser({ pgp }, data) {
         });
     }
   });
+}
+
+function logoutUserValidate({}, data) {
+  return Promise.resolve();
+}
+
+function logoutUser(userContext, data) {
+  if (userContext.authed) {
+    log(userContext.userDesc + ": logged out");
+    userContext.authed = false;
+    userContext.token = undefined;
+    userContext.userId = undefined;
+    userContext.userDesc = undefined;
+  }
+  return Promise.resolve();
 }
 
 function searchUserValidate(ctx, data) {
@@ -249,6 +298,12 @@ const handlers = [
     mustBeAuthed: false,
     validate: loginUserValidate,
     handler: loginUser
+  },
+  {
+    name: "user:logout",
+    mustBeAuthed: false,
+    validate: logoutUserValidate,
+    handler: logoutUser
   },
   {
     name: "user:search",
