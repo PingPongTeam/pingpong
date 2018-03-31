@@ -5,7 +5,6 @@ const log = common.log;
 const r = require('rethinkdbdash')(config.rethink);
 const crypto = require('crypto');
 const hash = crypto.createHash('sha256');
-const errorCode = require('./error_code.js');
 
 function newToken(userId, email, expirationTime)
 {
@@ -36,6 +35,8 @@ function sha512(password, salt)
   var value = hash.digest('hex');
   return {salt : salt, passwordHash : value};
 }
+
+
 
 class UserDb {
 
