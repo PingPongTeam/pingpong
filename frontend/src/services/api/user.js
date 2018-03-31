@@ -28,9 +28,9 @@ user.create = ({ name, email, alias, password }) => {
   });
 };
 
-user.loginEmailPass = ({ email, password }) => {
+user.loginEmailOrAliasPass = ({ auth, password }) => {
   return new Promise((resolve, reject) => {
-    socket.emit('user:login', { email, password }, response => {
+      socket.emit('user:login', { auth, password }, response => {
       if (response.status === 0) {
         state.loggedIn = true;
         window.localStorage.setItem('jwt', response.token);
