@@ -3,6 +3,7 @@ const common = require("./common.js");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const hash = crypto.createHash("sha256");
+const validator = require("validator");
 const dbHelpers = require("./db_helpers.js");
 const errorCode = require("./error_code.js");
 
@@ -40,30 +41,39 @@ function sha512(password, salt) {
   return { salt: salt, passwordHash: value };
 }
 
-// Validate create:user parameters
-function createUserValidate({ pgp }, data) {
-  return new Promise(function(fulfill, reject) {
-    let errorArray = [];
+const aliasRegex = new RegExp("^[a-zA-Z0-9]+([_-]?[a-zA-Z0-9])*$", "i");
+function validateAlias(alias) {
+  return aliasRegex.test(alias);
+}
 
-    if (!data.alias || data.alias.length < 2) {
-      // TODO: Ensure that alias is restricted to specified characters
-      errorArray.push({ hint: "alias", error: errorCode.invalidValue });
-    }
-    if (!data.email || data.email.length < 2) {
-      // TODO: Ensure that email is an actual email address
-      errorArray.push({ hint: "email", error: errorCode.invalidValue });
-    }
-    if (!data.name || data.name.length < 2) {
-      errorArray.push({ hint: "name", error: errorCode.invalidValue });
-    }
-    if (!data.password || data.password.length < 5) {
-      errorArray.push({ hint: "password", error: errorCode.invalidValue });
-    }
-    if (errorArray.length > 0) {
-      return reject(errorArray);
-    }
-    return fulfill();
-  });
+function validateEmail(email) {
+  return validator.isEmail(email);
+}
+function validateName(name) {
+  // TODO
+  return name && name.length && name.length > 0;
+}
+
+// Validate create:user parameters
+function createUserValidate(ctx, data) {
+  let errorArray = [];
+
+  if (!validateAlias(data.alias)) {
+    errorArray.push({ hint: "alias", error: errorCode.invalidValue });
+  }
+  if (!validateEmail(data.email)) {
+    errorArray.push({ hint: "email", error: errorCode.invalidValue });
+  }
+  if (!validateName(data.name)) {
+    errorArray.push({ hint: "name", error: errorCode.invalidValue });
+  }
+  if (!data.password || data.password.length < 5) {
+    errorArray.push({ hint: "password", error: errorCode.invalidValue });
+  }
+  if (errorArray.length > 0) {
+    return Promise.reject(errorArray);
+  }
+  return Promise.resolve();
 }
 
 // Create user
@@ -102,7 +112,7 @@ function createUser({ pgp }, data) {
 }
 
 // Validate login:user parameters
-function loginUserValidate({ pgp }, data) {
+function loginUserValidate(ctx, data) {
   let errorArray = [];
   if (!data.token) {
     errorArray.push({ hint: "token", error: errorCode.missingValue });
