@@ -41,6 +41,7 @@ function sha512(password, salt) {
   return { salt: salt, passwordHash: value };
 }
 
+const aliasOrEmailRegex = new RegExp("^[a-zA-Z0-9_@.-]*$", "i");
 const aliasRegex = new RegExp("^[a-zA-Z0-9]+([_-]?[a-zA-Z0-9])*$", "i");
 function validateAlias(alias) {
   return aliasRegex.test(alias);
@@ -200,12 +201,40 @@ function loginUser({ pgp }, data) {
   });
 }
 
-function searchUserValidate({ rdb }, data) {
-  return Promise.resolve();
+function searchUserValidate(ctx, data) {
+  let errorArray = [];
+  if (!data.aliasOrEmail) {
+    errorArray.push({ hint: "aliasOrEmail", error: errorCode.missingValue });
+  } else if (
+    data.aliasOrEmail.lenght < 2 ||
+    !aliasOrEmailRegex.test(data.aliasOrEmail)
+  ) {
+    errorArray.push({ hint: "aliasOrEmail", error: errorCode.invalidValue });
+  } else {
+    return Promise.resolve();
+  }
+  return Promise.reject(errorArray);
 }
 
-function searchUser({ rdb }, data) {
-  return Promise.resolve();
+function searchUser({ pgp }, data) {
+  return new Promise((fulfill, reject) => {
+    pgp
+      .query(
+        "SELECT id, alias, name" +
+          " FROM users WHERE email LIKE $1 OR alias LIKE $1",
+        [data.aliasOrEmail + "%"]
+      )
+      .then(result => {
+        const users = result.rows.map(row => {
+          return { userId: row.id, name: row.name, alias: row.alias };
+        });
+        fulfill(users);
+      })
+      .catch(err => {
+        log("Error searching for user: " + err);
+        return reject([{ error: errorCode.internal }]);
+      });
+  });
 }
 
 const handlers = [
