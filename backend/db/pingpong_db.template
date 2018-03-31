@@ -58,7 +58,8 @@ CREATE TABLE public.users (
     name character varying(128),
     passwdhash character varying(128) NOT NULL,
     passwdsalt character varying(16) NOT NULL,
-    createdate timestamp without time zone DEFAULT now()
+    createdate timestamp without time zone DEFAULT now(),
+    deleted boolean DEFAULT false NOT NULL
 );
 
 
