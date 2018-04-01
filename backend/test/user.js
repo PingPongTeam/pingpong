@@ -55,7 +55,7 @@ describe("user:create", () => {
         assert(result.status === 1, "Unexpected status");
         assert(result.errors[0].hint === "alias", "Unexpected hint");
         assert(
-          result.errors[0].error.errorName === "ValueInUse",
+          result.errors[0].error === "ValueInUse",
           "Unexpected error name"
         );
         done();
@@ -75,7 +75,7 @@ describe("user:create", () => {
         assert(result.status === 1, "Unexpected status");
         assert(result.errors[0].hint === "email", "Unexpected hint");
         assert(
-          result.errors[0].error.errorName === "ValueInUse",
+          result.errors[0].error === "ValueInUse",
           "Unexpected error name"
         );
         done();
@@ -94,7 +94,7 @@ describe("user:create", () => {
       result => {
         assert(result.status === 1, "Unexpected status");
         assert(
-          result.errors[0].error.errorName === "ValueInUse",
+          result.errors[0].error === "ValueInUse",
           "Unexpected error name"
         );
         done();
@@ -146,7 +146,7 @@ describe("user:login", () => {
         assert(result.status === 1, "Unexpected status");
         assert(result.errors[0].hint === "auth", "Unexpected hint");
         assert(
-          result.errors[0].error.errorName === "InvalidUser",
+          result.errors[0].error === "InvalidUser",
           "Unexpected error name"
         );
         done();
@@ -299,10 +299,7 @@ describe("user:search", () => {
       result => {
         assert(result.status === 1, "Unexpected status");
         assert(result.errors[0].hint === "aliasOrEmail", "Unexpected hint");
-        assert(
-          result.errors[0].error.errorName === "InvalidValue",
-          "Unexpected error"
-        );
+        assert(result.errors[0].error === "InvalidValue", "Unexpected error");
         done();
       }
     );
@@ -323,10 +320,7 @@ describe("user:search", () => {
       },
       result => {
         assert(result.status === 1, "Unexpected status");
-        assert(
-          result.errors[0].error.errorName === "NotAllowed",
-          "Unexpected error"
-        );
+        assert(result.errors[0].error === "NotAllowed", "Unexpected error");
         done();
       }
     );
