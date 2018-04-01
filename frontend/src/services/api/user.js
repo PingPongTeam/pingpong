@@ -50,7 +50,7 @@ user.loginToken = () => {
         state.loggedIn = true;
       } else if (response.status === 1) {
         state.loggedIn = false;
-        if (response.errors && response.errors[0].errorCode === 902) {
+        if (response.errors && response.errors[0].error === "InvalidToken") {
           window.localStorage.removeItem('jwt');
         }
       }

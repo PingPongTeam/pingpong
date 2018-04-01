@@ -5,7 +5,6 @@ import emailValidator from 'email-validator';
 import Render from './render';
 
 class SignupContainer extends Component {
-
   constructor() {
     super();
     this.handleSignup = this.handleSignup.bind(this);
@@ -66,16 +65,13 @@ class SignupContainer extends Component {
     } catch (errors) {
       console.log('got errors', errors);
       errors.forEach(error => {
-        switch (error.errorName) {
-          case 'EmailInUse':
+        if (error.error === 'ValueInUse') {
+          if (error.hint === 'email') {
             this.setValidationState('errorMessage', 'emailInUse');
-            break;
-          case 'AliasInUse':
+          } else if (error.hint === 'alias') {
             this.setValidationState('errorMessage', 'aliasInUse');
-            break;
-          default:
-            break;
-        };
+          }
+        }
       });
     }
     this.setState(() => ({isLoading: false}));

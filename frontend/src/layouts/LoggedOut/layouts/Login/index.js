@@ -51,7 +51,7 @@ class LoginContainer extends Component {
     try {
       await user.loginEmailOrAliasPass({ auth: email, password });
     } catch (errorResponse) {
-      if (errorResponse.errors && errorResponse.errors[0].errorCode === 903) {
+      if (errorResponse.errors && errorResponse.errors[0].error === "InvalidUser") {
         this.setValidationState('errorMessage', 'invalidUser');
         console.log('invalid user error');
       }
