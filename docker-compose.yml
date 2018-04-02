@@ -1,15 +1,15 @@
 version: "3.1"
 
 services:
-  rethinkdb:
-    image: rethinkdb:latest
-    container_name: rethink
-    volumes:
-      - ./db/data:/data
+  db:
+    image: postgres:10.3-alpine
+    restart: always
+    container_name: db
     ports:
-      - "8080:8080"
-      - "28015:28015"
-      - "29015:29015"
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_USER: backenduser
 
   nodefrontend:
     build:
@@ -52,12 +52,12 @@ services:
     environment:
       - NODE_ENV=development
       - SOCKETIO_SERVER_PORT=3001
-      - RETHINKDB_HOST=rethinkdb
-      - RETHINKDB_PORT=28015
+      - DB_HOST=db
+      - DB_PORT=5432
     links:
-      - rethinkdb
+      - db
     depends_on:
-      - rethinkdb
+      - db
           
 volumes:
   notusedfront:
