@@ -31,6 +31,7 @@ function executeCommand(userContext, command, data, reply) {
 
   if (userContext.accessLevel.level < command.minAccessLevel.level) {
     // Not allowed to execute this command
+    userContext.log("Not allowed to execute '" + command.name + "'");
     return reply({ status: 1, errors: [{ error: errorCode.notAllowed }] });
   }
 
@@ -47,7 +48,7 @@ function executeCommand(userContext, command, data, reply) {
     })
     .catch(function(errorArray) {
       let shortError = errorArray
-        .map(r => "" + r.hint + " (" + r.error.errorName + ")")
+        .map(r => "" + r.hint + " (" + r.error + ")")
         .join(", ");
       userContext.log(
         "Error executing '" +
@@ -82,7 +83,11 @@ io.on("connection", function onConnection(socket) {
       ")]:";
     return log(prefix + " " + args);
   };
-  userContext.log("connected from " + socket.request.connection.remoteAddress);
+  userContext.log("Connected from " + socket.request.connection.remoteAddress);
+
+  socket.on("disconnect", () => {
+    userContext.log("Disconnected");
+  });
 
   // Register command handlers
   for (let i = 0; i < commandHandlers.length; i++) {
