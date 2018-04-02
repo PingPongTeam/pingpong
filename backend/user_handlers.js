@@ -1,3 +1,4 @@
+const AccessLevel = require("./access_level.js");
 const config = require("./config.js");
 const common = require("./common.js");
 const jwt = require("jsonwebtoken");
@@ -6,8 +7,6 @@ const hash = crypto.createHash("sha256");
 const validator = require("validator");
 const dbHelpers = require("./db_helpers.js");
 const errorCode = require("./error_code.js");
-
-const log = common.log;
 
 function newToken(userId, email, expirationTime) {
   return new Promise(function(fulfill, reject) {
@@ -78,11 +77,15 @@ function createUserValidate(ctx, data) {
 }
 
 function markAuthed(userContext, alias, email, userId, token) {
-  userContext.authed = true;
+  let accessLevel = AccessLevel.user;
+  userContext.log(
+    "signed in (as " + email + ", with access level '" + accessLevel.name + "')"
+  );
+  userContext.accessLevel = accessLevel;
+
   userContext.token = token;
   userContext.userId = userId;
-  userContext.userDesc = "[" + email + "]";
-  log(userContext.userDesc + " signed in");
+  userContext.email = email;
 }
 
 // Create user'
@@ -105,14 +108,14 @@ function createUser(userContext, data) {
               err.constraint === "users_alias_key" ? "alias" : "email";
             return reject([{ hint: valueName, error: errorCode.inUse }]);
           } else {
-            log("unhandled db error: " + JSON.stringify(err));
+            userContext.log("unhandled db error: " + JSON.stringify(err));
             return reject([{ error: errorCode.internal }]);
           }
         } else {
           // User was created - Generate token and return
           let userId = result.rows[0].id;
           return newToken(userId, data.email).then(function(token) {
-            log("Created user " + data.alias + " (" + userId + ")");
+            userContext.log("Created user " + data.alias + " (" + userId + ")");
             markAuthed(userContext, data.alias, data.email, userId, token);
             return fulfill({ userId, token });
           });
@@ -150,7 +153,7 @@ function loginUser(userContext, data) {
       // Received token for authentication
       jwt.verify(data.token, config.jwt.secret, function(err, decoded) {
         if (err) {
-          log("Invalid token: " + JSON.stringify(err));
+          userContext.log("Invalid token: " + JSON.stringify(err));
           return reject([{ hint: "token", error: errorCode.invalidToken }]);
         } else {
           // Ensure that user exists in db
@@ -179,7 +182,7 @@ function loginUser(userContext, data) {
                     return fulfill({ userId: decoded.userId, token: token });
                   })
                   .catch(function(error) {
-                    log("Error creating token: " + error);
+                    userContext.log("Error creating token: " + error);
                   });
               }
             })
@@ -190,8 +193,6 @@ function loginUser(userContext, data) {
       });
     } else {
       // Received alias/email and password for authentication
-      log("Got auth (auth='" + data.auth + "')");
-
       pgp
         .query(
           "SELECT id, email, alias, passwdhash, passwdsalt" +
@@ -211,7 +212,7 @@ function loginUser(userContext, data) {
                 return fulfill({ userId: row.id, token });
               });
             } else {
-              log("Invalid password for user: " + data.auth);
+              userContext.log("Invalid password for user: " + data.auth);
               return reject([{ hint: "auth", error: errorCode.invalidUser }]);
             }
           } else if (res.rowCount === 0) {
@@ -219,14 +220,14 @@ function loginUser(userContext, data) {
             return reject([{ hint: "auth", error: errorCode.invalidUser }]);
           } else {
             // DB returned multiple columns (shouldn't occur)!?
-            log(
+            userContext.log(
               "Multiple matches on auth (" + data.auth + "): " + res.rowCount
             );
             return reject([{ hint: "auth", error: errorCode.internal }]);
           }
         })
         .catch(function(err) {
-          log(
+          userContext.log(
             "db error (" + JSON.stringify(data) + "): " + JSON.stringify(err)
           );
           return reject([{ hint: "auth", error: errorCode.internal }]);
@@ -240,9 +241,9 @@ function logoutUserValidate({}, data) {
 }
 
 function logoutUser(userContext, data) {
-  if (userContext.authed) {
-    log(userContext.userDesc + ": logged out");
-    userContext.authed = false;
+  if (userContext.accessLevel) {
+    userContext.log("logged out");
+    userContext.accessLevel = AccessLevel.any;
     userContext.token = undefined;
     userContext.userId = undefined;
     userContext.userDesc = undefined;
@@ -280,7 +281,7 @@ function searchUser({ pgp }, data) {
         fulfill(users);
       })
       .catch(err => {
-        log("Error searching for user: " + err);
+        userContext.log("Error searching for user: " + err);
         return reject([{ error: errorCode.internal }]);
       });
   });
@@ -289,25 +290,25 @@ function searchUser({ pgp }, data) {
 const handlers = [
   {
     name: "user:create",
-    mustBeAuthed: false,
+    minAccessLevel: AccessLevel.any,
     validate: createUserValidate,
     handler: createUser
   },
   {
     name: "user:login",
-    mustBeAuthed: false,
+    minAccessLevel: AccessLevel.any,
     validate: loginUserValidate,
     handler: loginUser
   },
   {
     name: "user:logout",
-    mustBeAuthed: false,
+    minAccessLevel: AccessLevel.any,
     validate: logoutUserValidate,
     handler: logoutUser
   },
   {
     name: "user:search",
-    mustBeAuthed: true,
+    minAccessLevel: AccessLevel.user,
     validate: searchUserValidate,
     handler: searchUser
   }

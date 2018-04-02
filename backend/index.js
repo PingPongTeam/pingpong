@@ -6,7 +6,7 @@ const io = require("socket.io")(server);
 const config = require("./config.js");
 const { Pool } = require("pg");
 const common = require("./common.js");
-
+const AccessLevel = require("./access_level.js");
 const dbHelpers = require("./db_helpers.js");
 const errorCode = require("./error_code.js");
 const userHandlers = require("./user_handlers.js");
@@ -27,9 +27,9 @@ log("Connecting to " + config.db.uri);
 const pgp = new Pool({ connectionString: config.db.uri });
 
 function executeCommand(userContext, command, data, reply) {
-  log("Incomming '" + command.name + "' request");
+  userContext.log("Incomming '" + command.name + "' request");
 
-  if (command.mustBeAuthed && !userContext.authed) {
+  if (userContext.accessLevel.level < command.minAccessLevel.level) {
     // Not allowed to execute this command
     return reply({ status: 1, errors: [{ error: errorCode.notAllowed }] });
   }
@@ -38,18 +38,18 @@ function executeCommand(userContext, command, data, reply) {
     .validate(userContext, data)
     .then(function() {
       // Parameters was valid - Execute the handler
-      log("'" + command.name + "' parameters was valid");
+      userContext.log("'" + command.name + "' parameters was valid");
       return command.handler(userContext, data);
     })
     .then(function(result) {
-      log("'" + command.name + "' was executed succesfully");
+      userContext.log("'" + command.name + "' was executed succesfully");
       return reply({ status: 0, result: result });
     })
     .catch(function(errorArray) {
       let shortError = errorArray
         .map(r => "" + r.hint + " (" + r.error.errorName + ")")
         .join(", ");
-      log(
+      userContext.log(
         "Error executing '" +
           command.name +
           "' (" +
@@ -61,9 +61,28 @@ function executeCommand(userContext, command, data, reply) {
     });
 }
 
+let connectionCounter = 0;
+
 io.on("connection", function onConnection(socket) {
-  let userContext = { socket: socket, authed: false, pgp: pgp };
-  log("New connection from " + socket.request.connection.remoteAddress);
+  connectionCounter++;
+  let userContext = {
+    accessLevel: AccessLevel.any,
+    socket: socket,
+    authed: false,
+    pgp: pgp
+  };
+  userContext.log = function(...args) {
+    const prefix =
+      "[" +
+      (userContext.email
+        ? userContext.email
+        : "unauthed " + connectionCounter) +
+      " (" +
+      userContext.accessLevel.shortName +
+      ")]:";
+    return log(prefix + " " + args);
+  };
+  userContext.log("connected from " + socket.request.connection.remoteAddress);
 
   // Register command handlers
   for (let i = 0; i < commandHandlers.length; i++) {
