@@ -9,7 +9,7 @@ const socketOpts = {
   reconnection: false
 };
 
-describe("user:create", () => {
+describe("user:create/user:remove", () => {
   let socket;
   before("Connect to backend", () => {
     socket = io.connect(socketUrl, socketOpts);
@@ -97,6 +97,30 @@ describe("user:create", () => {
           result.errors[0].error === "ValueInUse",
           "Unexpected error name"
         );
+        done();
+      }
+    );
+  });
+  it("remove self", done => {
+    socket.emit(
+      "user:remove",
+      {
+        password: "StupidPassword"
+      },
+      result => {
+        assert(result.status === 0, "Unexpected status");
+        done();
+      }
+    );
+  });
+  it("remove again", done => {
+    socket.emit(
+      "user:remove",
+      {
+        password: "StupidPassword"
+      },
+      result => {
+        assert(result.status === 1, "Unexpected status");
         done();
       }
     );

@@ -37,7 +37,7 @@ function sha512(password, salt) {
   var hash = crypto.createHmac("sha512", salt);
   hash.update(password);
   var value = hash.digest("hex");
-  return { salt: salt, passwordHash: value };
+  return value;
 }
 
 const aliasOrEmailRegex = new RegExp("^[a-zA-Z0-9_@.-]*$", "i");
@@ -67,7 +67,7 @@ function createUserValidate(ctx, data) {
   if (!validateName(data.name)) {
     errorArray.push({ hint: "name", error: errorCode.invalidValue });
   }
-  if (!data.password || data.password.length < 5) {
+  if (!data.password || data.password.length < 2) {
     errorArray.push({ hint: "password", error: errorCode.invalidValue });
   }
   if (errorArray.length > 0) {
@@ -76,7 +76,15 @@ function createUserValidate(ctx, data) {
   return Promise.resolve();
 }
 
-function markAuthed(userContext, alias, email, userId, token) {
+function markAuthed(
+  userContext,
+  alias,
+  email,
+  userId,
+  token,
+  passwdHash,
+  passwdSalt
+) {
   let accessLevel = AccessLevel.user;
   userContext.log(
     "signed in (as " + email + ", with access level '" + accessLevel.name + "')"
@@ -86,6 +94,8 @@ function markAuthed(userContext, alias, email, userId, token) {
   userContext.token = token;
   userContext.userId = userId;
   userContext.email = email;
+  userContext.passwdHash = passwdHash;
+  userContext.passwdSalt = passwdSalt;
 }
 
 // Create user'
@@ -93,11 +103,12 @@ function createUser(userContext, data) {
   let pgp = userContext.pgp;
   // Create a hashed password and insert user in db
   return new Promise(function(fulfill, reject) {
-    const passwd = sha512(data.password, randomString(16));
+    const passwdSalt = randomString(16);
+    const passwdHash = sha512(data.password, passwdSalt);
     return pgp.query(
       "INSERT into users(email, alias, name, passwdHash, passwdSalt) VALUES " +
         "($1, $2, $3, $4, $5) RETURNING id;",
-      [data.email, data.alias, data.name, passwd.passwordHash, passwd.salt],
+      [data.email, data.alias, data.name, passwdHash, passwdSalt],
       (err, result) => {
         if (err) {
           // TODO: Can we detect if both email and/or alias is in use
@@ -116,12 +127,46 @@ function createUser(userContext, data) {
           let userId = result.rows[0].id;
           return newToken(userId, data.email).then(function(token) {
             userContext.log("Created user " + data.alias + " (" + userId + ")");
-            markAuthed(userContext, data.alias, data.email, userId, token);
+            markAuthed(
+              userContext,
+              data.alias,
+              data.email,
+              userId,
+              token,
+              passwdHash,
+              passwdSalt
+            );
             return fulfill({ userId, token });
           });
         }
       }
     );
+  });
+}
+
+function removeUserValidate(userContext, data) {
+  if (!data.password || !data.password.length) {
+    errorArray.push({ hint: "password", error: errorCode.missingValue });
+  }
+  return Promise.resolve();
+}
+
+function removeUser(userContext, data) {
+  // Remove the logged in user
+  return new Promise((fulfill, reject) => {
+    const incommingHash = sha512(data.password, userContext.passwdSalt);
+    if (incommingHash !== userContext.passwdHash) {
+      return reject([{ hint: "password", error: errorCode.invalidValue }]);
+    }
+    // Remove account and logout user
+    userContext.pgp
+      .query("DELETE FROM users WHERE id = $1", [userContext.userId])
+      .then(res => {
+        userContext.log(JSON.stringify(res));
+        userContext.log("User account deleted");
+        _logoutUser(userContext);
+        return fulfill({});
+      });
   });
 }
 
@@ -177,7 +222,9 @@ function loginUser(userContext, data) {
                       row.alias,
                       row.email,
                       row.id,
-                      token
+                      token,
+                      row.passwdhash,
+                      row.passwdsalt
                     );
                     return fulfill({ userId: decoded.userId, token: token });
                   })
@@ -204,11 +251,19 @@ function loginUser(userContext, data) {
             // Found user - Test if the supplied password is correct
             const row = res.rows[0];
             const incomming = sha512(data.password, row.passwdsalt);
-            if (incomming.passwordHash === row.passwdhash) {
+            if (incomming === row.passwdhash) {
               // Return a new token to the verified user
               return newToken(row.id, row.email).then(function(token) {
                 // Mark user as authed and signed in
-                markAuthed(userContext, row.alias, row.email, row.id, token);
+                markAuthed(
+                  userContext,
+                  row.alias,
+                  row.email,
+                  row.id,
+                  token,
+                  row.passwdhash,
+                  row.passwdsalt
+                );
                 return fulfill({ userId: row.id, token });
               });
             } else {
@@ -240,13 +295,17 @@ function logoutUserValidate({}, data) {
   return Promise.resolve();
 }
 
+function _logoutUser(userContext) {
+  userContext.log("logged out");
+  userContext.accessLevel = AccessLevel.any;
+  userContext.token = undefined;
+  userContext.userId = undefined;
+  userContext.userDesc = undefined;
+}
+
 function logoutUser(userContext, data) {
   if (userContext.accessLevel) {
-    userContext.log("logged out");
-    userContext.accessLevel = AccessLevel.any;
-    userContext.token = undefined;
-    userContext.userId = undefined;
-    userContext.userDesc = undefined;
+    _logoutUser(userContext);
   }
   return Promise.resolve();
 }
@@ -293,6 +352,12 @@ const handlers = [
     minAccessLevel: AccessLevel.any,
     validate: createUserValidate,
     handler: createUser
+  },
+  {
+    name: "user:remove",
+    minAccessLevel: AccessLevel.user,
+    validate: removeUserValidate,
+    handler: removeUser
   },
   {
     name: "user:login",
