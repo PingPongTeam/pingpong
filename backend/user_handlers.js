@@ -99,84 +99,73 @@ function markAuthed(
 }
 
 // Create user'
-function createUser(userContext, data) {
+function createUser(userContext, { data, replyOK, replyFail }) {
   let pgp = userContext.pgp;
   // Create a hashed password and insert user in db
-  return new Promise(function(fulfill, reject) {
-    const passwdSalt = randomString(16);
-    const passwdHash = sha512(data.password, passwdSalt);
-    return pgp.query(
-      "INSERT into users(email, alias, name, passwdHash, passwdSalt) VALUES " +
-        "($1, $2, $3, $4, $5) RETURNING id;",
-      [data.email, data.alias, data.name, passwdHash, passwdSalt],
-      (err, result) => {
-        if (err) {
-          if (err.code === "23505") {
-            // Either alias or email (or both) was not unique. Test which one(s).
-            return pgp.query(
-              "SELECT id, email, alias FROM users WHERE email = $1 OR alias = $2",
-              [data.email, data.alias],
-              (err, result) => {
-                if (err) {
-                  userContext.log(
-                    "unhandled db error2: " + JSON.stringify(err)
-                  );
-                  return reject([{ error: errorCode.internal }]);
-                } else {
-                  let errorArray = [];
-                  result.rows.forEach(row => {
-                    if (row.alias === data.alias) {
-                      errorArray.push({
-                        hint: "alias",
-                        error: errorCode.inUse
-                      });
-                    }
-                    if (row.email === data.email) {
-                      errorArray.push({
-                        hint: "email",
-                        error: errorCode.inUse
-                      });
-                    }
+  const passwdSalt = randomString(16);
+  const passwdHash = sha512(data.password, passwdSalt);
+  pgp.query(
+    "INSERT into users(email, alias, name, passwdHash, passwdSalt) VALUES " +
+      "($1, $2, $3, $4, $5) RETURNING id;",
+    [data.email, data.alias, data.name, passwdHash, passwdSalt],
+    (err, result) => {
+      if (err && err.code === "23505") {
+        // Either alias or email (or both) was not unique. Test which one(s).
+        pgp.query(
+          "SELECT id, email, alias FROM users WHERE email = $1 OR alias = $2",
+          [data.email, data.alias],
+          (err, result) => {
+            let errorArray = [];
+            if (err) {
+              userContext.log("unhandled db error: " + JSON.stringify(err));
+              errorArray.push({ error: errorCode.internal });
+            } else {
+              result.rows.forEach(row => {
+                if (row.alias === data.alias) {
+                  errorArray.push({
+                    hint: "alias",
+                    error: errorCode.inUse
                   });
-                  if (errorArray.length > 0) {
-                    return reject(errorArray);
-                  }
                 }
-              }
-            );
-            let valueName =
-              err.constraint === "users_alias_key" ? "alias" : "email";
-            return reject([{ hint: valueName, error: errorCode.inUse }]);
-          } else {
-            userContext.log("unhandled db error: " + JSON.stringify(err));
-            return reject([{ error: errorCode.internal }]);
+                if (row.email === data.email) {
+                  errorArray.push({
+                    hint: "email",
+                    error: errorCode.inUse
+                  });
+                }
+              });
+            }
+            replyFail(errorArray);
           }
-        } else {
-          // User was created - Generate token and return
-          let userId = result.rows[0].id;
-          return newToken(userId, data.email).then(function(token) {
-            userContext.log("Created user " + data.alias + " (" + userId + ")");
-            markAuthed(
-              userContext,
-              data.alias,
-              data.email,
-              userId,
-              token,
-              passwdHash,
-              passwdSalt
-            );
-            return fulfill({
-              userId: userId,
-              email: data.email,
-              alias: data.alias,
-              name: data.name,
-              token: token
-            });
+        );
+      } else if (err) {
+        userContext.log("unhandled db error: " + JSON.stringify(err));
+        replyFail([{ error: errorCode.internal }]);
+      } else {
+        // User was created - Generate token and return
+        let userId = result.rows[0].id;
+        newToken(userId, data.email).then(function(token) {
+          userContext.log("Created user " + data.alias + " (" + userId + ")");
+          markAuthed(
+            userContext,
+            data.alias,
+            data.email,
+            userId,
+            token,
+            passwdHash,
+            passwdSalt
+          );
+          replyOK({
+            userId: userId,
+            email: data.email,
+            alias: data.alias,
+            name: data.name,
+            token: token
           });
-        }
+        });
       }
-    );
-  });
+    }
+  );
 }
 
 function removeUserValidate(userContext, data) {
@@ -186,13 +175,12 @@ function removeUserValidate(userContext, data) {
   return Promise.resolve();
 }
 
-function removeUser(userContext, data) {
+function removeUser(userContext, { data, replyOK, replyFail }) {
   // Remove the logged in user
-  return new Promise((fulfill, reject) => {
-    const incommingHash = sha512(data.password, userContext.passwdSalt);
-    if (incommingHash !== userContext.passwdHash) {
-      return reject([{ hint: "password", error: errorCode.invalidValue }]);
-    }
+  const incommingHash = sha512(data.password, userContext.passwdSalt);
+  if (incommingHash !== userContext.passwdHash) {
+    replyFail([{ hint: "password", error: errorCode.invalidValue }]);
+  } else {
     // Remove account and logout user
     userContext.pgp
       .query("DELETE FROM users WHERE id = $1", [userContext.userId])
@@ -200,9 +188,9 @@ function removeUser(userContext, data) {
         userContext.log(JSON.stringify(res));
         userContext.log("User account deleted");
         _logoutUser(userContext);
-        return fulfill({});
+        replyOK({});
       });
-  });
+  }
 }
 
 // Validate login:user parameters
@@ -226,116 +214,110 @@ function loginUserValidate(ctx, data) {
   return Promise.reject(errorArray);
 }
 
-function loginUser(userContext, data) {
+function loginUser(userContext, { data, replyOK, replyFail }) {
   let pgp = userContext.pgp;
-  return new Promise(async function(fulfill, reject) {
-    if (data.token) {
-      // Received token for authentication
-      jwt.verify(data.token, config.jwt.secret, function(err, decoded) {
-        if (err) {
-          userContext.log("Invalid token: " + JSON.stringify(err));
-          return reject([{ hint: "token", error: errorCode.invalidToken }]);
-        } else {
-          // Ensure that user exists in db
-          pgp
-            .query(
-              "SELECT id, email, alias, name, passwdhash, passwdsalt" +
-                " FROM users WHERE id = $1",
-              [decoded.userId]
-            )
-            .then(res => {
-              if (res.rowCount !== 1) {
-                return reject([
-                  { hint: "token", error: errorCode.invalidUser }
-                ]);
-              } else {
-                let row = res.rows[0];
-                return newToken(row.id, row.email)
-                  .then(function(token) {
-                    markAuthed(
-                      userContext,
-                      row.alias,
-                      row.email,
-                      row.id,
-                      token,
-                      row.passwdhash,
-                      row.passwdsalt
-                    );
-                    return fulfill({
-                      userId: decoded.userId,
-                      email: row.email,
-                      alias: row.alias,
-                      name: row.name,
-                      token: token
-                    });
-                  })
-                  .catch(function(error) {
-                    userContext.log("Error creating token: " + error);
-                  });
-              }
-            })
-            .catch(err => {
-              return reject([{ hint: "token", error: errorCode.internal }]);
-            });
-        }
-      });
-    } else {
-      // Received alias/email and password for authentication
-      pgp
-        .query(
-          "SELECT id, email, alias, name, passwdhash, passwdsalt" +
-            " FROM users WHERE email = $1 OR alias = $1",
-          [data.auth]
-        )
-        .then(function(res) {
-          if (res.rowCount === 1) {
-            // Found user - Test if the supplied password is correct
-            const row = res.rows[0];
-            const incomming = sha512(data.password, row.passwdsalt);
-            if (incomming === row.passwdhash) {
-              // Return a new token to the verified user
-              return newToken(row.id, row.email).then(function(token) {
-                // Mark user as authed and signed in
-                markAuthed(
-                  userContext,
-                  row.alias,
-                  row.email,
-                  row.id,
-                  token,
-                  row.passwdhash,
-                  row.passwdsalt
-                );
-                return fulfill({
-                  userId: row.id,
-                  email: row.email,
-                  alias: row.alias,
-                  name: row.name,
-                  token: token
-                });
-              });
+  if (data.token) {
+    // Received token for authentication
+    jwt.verify(data.token, config.jwt.secret, function(err, decoded) {
+      if (err) {
+        userContext.log("Invalid token: " + JSON.stringify(err));
+        replyFail([{ hint: "token", error: errorCode.invalidToken }]);
+      } else {
+        // Ensure that user exists in db
+        pgp
+          .query(
+            "SELECT id, email, alias, name, passwdhash, passwdsalt" +
+              " FROM users WHERE id = $1",
+            [decoded.userId]
+          )
+          .then(res => {
+            if (res.rowCount !== 1) {
+              replyFail([{ hint: "token", error: errorCode.invalidUser }]);
             } else {
-              userContext.log("Invalid password for user: " + data.auth);
-              return reject([{ hint: "auth", error: errorCode.invalidUser }]);
+              let row = res.rows[0];
+              newToken(row.id, row.email)
+                .then(function(token) {
+                  markAuthed(
+                    userContext,
+                    row.alias,
+                    row.email,
+                    row.id,
+                    token,
+                    row.passwdhash,
+                    row.passwdsalt
+                  );
+                  replyOK({
+                    userId: row.id,
+                    email: row.email,
+                    alias: row.alias,
+                    name: row.name,
+                    token: token
+                  });
+                })
+                .catch(function(error) {
+                  userContext.log("Error creating token: " + error);
+                  replyFail([{ error: errorCode.internal }]);
+                });
             }
-          } else if (res.rowCount === 0) {
-            // No such user
-            return reject([{ hint: "auth", error: errorCode.invalidUser }]);
+          });
+      }
+    });
+  } else {
+    // Received alias/email and password for authentication
+    pgp
+      .query(
+        "SELECT id, email, alias, name, passwdhash, passwdsalt" +
+          " FROM users WHERE email = $1 OR alias = $1",
+        [data.auth]
+      )
+      .then(function(res) {
+        if (res.rowCount === 1) {
+          // Found user - Test if the supplied password is correct
+          const row = res.rows[0];
+          const incomming = sha512(data.password, row.passwdsalt);
+          if (incomming === row.passwdhash) {
+            // Return a new token to the verified user
+            newToken(row.id, row.email).then(function(token) {
+              // Mark user as authed and signed in
+              markAuthed(
+                userContext,
+                row.alias,
+                row.email,
+                row.id,
+                token,
+                row.passwdhash,
+                row.passwdsalt
+              );
+              replyOK({
+                userId: row.id,
+                email: row.email,
+                alias: row.alias,
+                name: row.name,
+                token: token
+              });
+            });
           } else {
-            // DB returned multiple columns (shouldn't occur)!?
-            userContext.log(
-              "Multiple matches on auth (" + data.auth + "): " + res.rowCount
-            );
-            return reject([{ hint: "auth", error: errorCode.internal }]);
+            userContext.log("Invalid password for user: " + data.auth);
+            replyFail([{ hint: "auth", error: errorCode.invalidUser }]);
           }
-        })
-        .catch(function(err) {
+        } else if (res.rowCount === 0) {
+          // No such user
+          replyFail([{ hint: "auth", error: errorCode.invalidUser }]);
+        } else {
+          // DB returned multiple columns (shouldn't occur)!?
           userContext.log(
-            "db error (" + JSON.stringify(data) + "): " + JSON.stringify(err)
+            "Multiple matches on auth (" + data.auth + "): " + res.rowCount
           );
-          return reject([{ hint: "auth", error: errorCode.internal }]);
-        });
-    }
-  });
+          replyFail([{ hint: "auth", error: errorCode.internal }]);
+        }
+      })
+      .catch(function(err) {
+        userContext.log(
+          "db error (" + JSON.stringify(data) + "): " + JSON.stringify(err)
+        );
+        replyFail([{ hint: "auth", error: errorCode.internal }]);
+      });
+  }
 }
 
 function logoutUserValidate({}, data) {
@@ -350,11 +332,11 @@ function _logoutUser(userContext) {
   userContext.userDesc = undefined;
 }
 
-function logoutUser(userContext, data) {
+function logoutUser(userContext, { data, replyOK, replyFail }) {
   if (userContext.accessLevel) {
     _logoutUser(userContext);
   }
-  return Promise.resolve();
+  replyOK({});
 }
 
 function searchUserValidate(ctx, data) {
@@ -372,30 +354,30 @@ function searchUserValidate(ctx, data) {
   return Promise.reject(errorArray);
 }
 
-function searchUser({ pgp }, data) {
-  return new Promise((fulfill, reject) => {
-    pgp
-      .query(
-        "SELECT id, alias, email, name" +
-          " FROM users WHERE email LIKE $1 OR alias LIKE $1",
-        [data.aliasOrEmail + "%"]
-      )
-      .then(result => {
-        const users = result.rows.map(row => {
-          return {
-            userId: row.id,
-            name: row.name,
-            alias: row.alias,
-            email: row.email
-          };
-        });
-        fulfill(users);
-      })
-      .catch(err => {
-        userContext.log("Error searching for user: " + err);
-        return reject([{ error: errorCode.internal }]);
+function searchUser({ log, pgp }, { data, replyOK, replyFail }) {
+  log("test2: ");
+  pgp
+    .query(
+      "SELECT id, alias, email, name" +
+        " FROM users WHERE email LIKE $1 OR alias LIKE $1",
+      [data.aliasOrEmail + "%"]
+    )
+    .then(result => {
+      log("test1: " + JSON.stringify(result));
+      const users = result.rows.map(row => {
+        return {
+          userId: row.id,
+          name: row.name,
+          alias: row.alias,
+          email: row.email
+        };
       });
-  });
+      replyOK(users);
+    })
+    .catch(err => {
+      log("Error searching for user: " + err);
+      replyFail([{ error: errorCode.internal }]);
+    });
 }
 
 const handlers = [

@@ -26,13 +26,35 @@ const commandHandlers = [].concat(userHandlers);
 log("Connecting to " + config.db.uri);
 const pgp = new Pool({ connectionString: config.db.uri });
 
-function executeCommand(userContext, command, data, reply) {
+function replyErrorLog(
+  commandName,
+  requestData,
+  userContext,
+  socketReply,
+  errorArray
+) {
+  let shortError = errorArray
+    .map(r => "" + r.hint + " (" + r.error + ")")
+    .join(", ");
+  userContext.log(
+    "Error executing '" +
+      commandName +
+      "' (" +
+      JSON.stringify(requestData) +
+      "): " +
+      shortError
+  );
+  socketReply({ status: 1, errors: errorArray });
+}
+
+function executeCommand(userContext, command, data, socketReply) {
   userContext.log("Incomming '" + command.name + "' request");
 
   if (userContext.accessLevel.level < command.minAccessLevel.level) {
     // Not allowed to execute this command
     userContext.log("Not allowed to execute '" + command.name + "'");
-    return reply({ status: 1, errors: [{ error: errorCode.notAllowed }] });
+    socketReply({ status: 1, errors: [{ error: errorCode.notAllowed }] });
+    return;
   }
 
   command
@@ -40,11 +62,30 @@ function executeCommand(userContext, command, data, reply) {
     .then(function() {
       // Parameters was valid - Execute the handler
       userContext.log("'" + command.name + "' parameters was valid");
-      return command.handler(userContext, data);
+      command.handler(userContext, {
+        data,
+        replyOK: reply => {
+          userContext.log("'" + command.name + "' was executed succesfully");
+          socketReply({ status: 0, result: reply });
+        },
+        replyFail: errorArray => {
+          replyErrorLog(
+            command.name,
+            data,
+            userContext,
+            socketReply,
+            errorArray
+          );
+        }
+      });
     })
-    .then(function(result) {
+    .catch(errorArray => {
+      replyErrorLog(command.name, data, userContext, socketReply, errorArray);
+    });
+
+  /*.then(function(result) {
       userContext.log("'" + command.name + "' was executed succesfully");
-      return reply({ status: 0, result: result });
+      return socketReply({ status: 0, result: result });
     })
     .catch(function(errorArray) {
       let shortError = errorArray
@@ -58,8 +99,8 @@ function executeCommand(userContext, command, data, reply) {
           "): " +
           shortError
       );
-      return reply({ status: 1, errors: errorArray });
-    });
+      return socketReply({ status: 1, errors: errorArray });
+    });*/
 }
 
 let connectionCounter = 0;
