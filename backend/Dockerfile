@@ -23,6 +23,7 @@ RUN npm install && npm cache clean --force
 ENV PATH /opt/node_modules/.bin:$PATH
 
 # copy in our source code last, as it changes the most
+# hej
 WORKDIR /opt/app
 COPY . /opt/app
 
