@@ -8,7 +8,7 @@ const Wrapper = glamorous.div({
   display: 'flex',
   flexDirection: 'column',
   position: 'relative',
-  margin: '1em 0'
+  margin: '0'
 });
 const labelStyles = css({
   color: `hsla(${globalStyles.colors.white},1)`,
@@ -20,7 +20,7 @@ const labelStyles = css({
   backgroundColor: `hsla(${globalStyles.colors.blue},1)`
 });
 
-const Input = ({ value, label, notice, status, onChange, ...rest }) => {
+const Input = ({ value, label, notice, status, getRef, ...rest }) => {
   const statusColor = status
     ? `hsla(${globalStyles.colors[status]}, 1)`
     : `hsla(${globalStyles.colors.white}, 1)`;
@@ -51,18 +51,20 @@ const Input = ({ value, label, notice, status, onChange, ...rest }) => {
 
   const id = uuid();
 
-  const handleChange = e => {
-    if (onChange) {
-      onChange(e);
-    }
-  };
-
   return (
     <Wrapper>
       <label {...labelStyles} htmlFor={id}>
         {label} {notice && <span style={{ color: noticeColor }}>{notice}</span>}
       </label>
-      <input className={inputStyles} value={value} {...rest} id={id} />
+      <input
+        className={inputStyles}
+        value={value}
+        {...rest}
+        id={id}
+        ref={ref => {
+          getRef ? getRef(ref) : null;
+        }}
+      />
     </Wrapper>
   );
 };

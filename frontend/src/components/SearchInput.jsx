@@ -2,6 +2,7 @@ import React from 'react';
 import { css } from 'glamor';
 import glamorous from 'glamorous';
 import globalStyles from 'globalStyles';
+import Input from 'components/Input';
 
 const Wrapper = glamorous.div({
   maxWidth: '100%',
@@ -10,17 +11,15 @@ const Wrapper = glamorous.div({
 const InputWrapper = glamorous.div({
   display: 'flex',
   alignItems: 'center',
-  marginBottom: '15px'
+  position: 'relative'
 });
-const styledInput = css({
-  color: `rgb(${globalStyles.colors.black})`,
-  fontSize: '22px',
-  marginLeft: '10px',
-  width: '100%',
-  '::placeholder': {
-    fontWeight: 100,
-    textTransform: 'uppercase'
-  }
+const inputStyles = {
+  paddingLeft: '2.8em'
+};
+const SearchIconWrapper = glamorous.div({
+  position: 'absolute',
+  left: '1.7em',
+  paddingTop: '0.3em'
 });
 const searchIcon = (
   <svg
@@ -46,12 +45,12 @@ const resultItem = css({
   fontSize: '54px',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
-  padding: '15px 5px',
+  padding: '0.6em 0.4em',
   ':hover': {
-    backgroundColor: `rgba(${globalStyles.colors.black}, .05)`
+    backgroundColor: `hsla(${globalStyles.colors.success}, 1)`
   },
   ':focus': {
-    backgroundColor: `rgba(${globalStyles.colors.black}, .05)`
+    backgroundColor: `hsla(${globalStyles.colors.success}, 1)`
   }
 });
 
@@ -101,10 +100,10 @@ const SearchInputRender = ({
   return (
     <Wrapper>
       <InputWrapper>
-        {searchIcon}
-        <input
-          className={styledInput}
-          ref={ref => {
+        <SearchIconWrapper>{searchIcon}</SearchIconWrapper>
+        <Input
+          style={inputStyles}
+          getRef={ref => {
             searchInputRef = ref;
           }}
           type="search"

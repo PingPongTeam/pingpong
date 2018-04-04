@@ -33,10 +33,6 @@ const BottomControlWrapper = glamorous.div({
   bottom: 0,
   width: '100%'
 });
-const CancelButton = glamorous.div({
-  borderTop: `1px dashed hsl(${globalStyles.colors.white})`,
-  width: '100%'
-});
 
 const NewMatchRender = ({
   chosenOpponent,
@@ -53,11 +49,9 @@ const NewMatchRender = ({
         <TinyText>CURRENT TOTAL MATCH STATS</TinyText>
         <BottomControlWrapper>
           <Button onClick={handleStartMatch}>Start game</Button>
-          <CancelButton>
-            <Link to="/">
-              <SecondaryButton>Cancel</SecondaryButton>
-            </Link>
-          </CancelButton>
+          <Link to="/">
+            <SecondaryButton>Cancel</SecondaryButton>
+          </Link>
         </BottomControlWrapper>
       </Wrapper>
     );
@@ -74,11 +68,9 @@ const NewMatchRender = ({
       />
       <TinyText>RECENTLY CHALLENGED</TinyText>
       <BottomControlWrapper>
-        <CancelButton>
-          <Link to="/">
-            <SecondaryButton>Cancel</SecondaryButton>
-          </Link>
-        </CancelButton>
+        <Link to="/">
+          <SecondaryButton>Cancel</SecondaryButton>
+        </Link>
       </BottomControlWrapper>
     </Wrapper>
   );

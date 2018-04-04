@@ -34,7 +34,9 @@ class NewMatchContainer extends Component {
     }
     if (searchString.length > 1 && !this.state.searchResult) {
       try {
-        const serverResult = await user.search({ searchTerm: searchString });
+        const serverResult = await user.search({
+          searchTerm: searchString.toLowerCase()
+        });
         console.log('GOT REAL RESPONSE', serverResult);
         this.setState(() => ({
           searchResult: serverResult,
