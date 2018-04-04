@@ -165,7 +165,13 @@ function createUser(userContext, data) {
               passwdHash,
               passwdSalt
             );
-            return fulfill({ userId, token });
+            return fulfill({
+              userId: userId,
+              email: data.email,
+              alias: data.alias,
+              name: data.name,
+              token: token
+            });
           });
         }
       }
@@ -233,7 +239,7 @@ function loginUser(userContext, data) {
           // Ensure that user exists in db
           pgp
             .query(
-              "SELECT id, email, alias, passwdhash, passwdsalt" +
+              "SELECT id, email, alias, name, passwdhash, passwdsalt" +
                 " FROM users WHERE id = $1",
               [decoded.userId]
             )
@@ -255,7 +261,13 @@ function loginUser(userContext, data) {
                       row.passwdhash,
                       row.passwdsalt
                     );
-                    return fulfill({ userId: decoded.userId, token: token });
+                    return fulfill({
+                      userId: decoded.userId,
+                      email: row.email,
+                      alias: row.alias,
+                      name: row.name,
+                      token: token
+                    });
                   })
                   .catch(function(error) {
                     userContext.log("Error creating token: " + error);
@@ -271,7 +283,7 @@ function loginUser(userContext, data) {
       // Received alias/email and password for authentication
       pgp
         .query(
-          "SELECT id, email, alias, passwdhash, passwdsalt" +
+          "SELECT id, email, alias, name, passwdhash, passwdsalt" +
             " FROM users WHERE email = $1 OR alias = $1",
           [data.auth]
         )
@@ -293,7 +305,13 @@ function loginUser(userContext, data) {
                   row.passwdhash,
                   row.passwdsalt
                 );
-                return fulfill({ userId: row.id, token });
+                return fulfill({
+                  userId: row.id,
+                  email: row.email,
+                  alias: row.alias,
+                  name: row.name,
+                  token: token
+                });
               });
             } else {
               userContext.log("Invalid password for user: " + data.auth);
@@ -358,13 +376,18 @@ function searchUser({ pgp }, data) {
   return new Promise((fulfill, reject) => {
     pgp
       .query(
-        "SELECT id, alias, name" +
+        "SELECT id, alias, email, name" +
           " FROM users WHERE email LIKE $1 OR alias LIKE $1",
         [data.aliasOrEmail + "%"]
       )
       .then(result => {
         const users = result.rows.map(row => {
-          return { userId: row.id, name: row.name, alias: row.alias };
+          return {
+            userId: row.id,
+            name: row.name,
+            alias: row.alias,
+            email: row.email
+          };
         });
         fulfill(users);
       })

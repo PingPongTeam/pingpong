@@ -190,6 +190,15 @@ describe("user:login", () => {
       result => {
         assert(result.status === 0, "Unexpected status");
         assert(result.result.userId === createdUserId, "Unexpected user id");
+        assert(result.result.name === createdUser.name, "Unexpected user name");
+        assert(
+          result.result.email === createdUser.email,
+          "Unexpected email name"
+        );
+        assert(
+          result.result.alias === createdUser.alias,
+          "Unexpected name name"
+        );
         assert(result.result.token, "Missing token");
         done();
       }
@@ -205,6 +214,16 @@ describe("user:login", () => {
       result => {
         assert(result.status === 0, "Unexpected status");
         assert(result.result.userId === createdUserId, "Unexpected user id");
+        assert(result.result.name === createdUser.name, "Unexpected user name");
+        assert(
+          result.result.email === createdUser.email,
+          "Unexpected email name"
+        );
+        assert(
+          result.result.alias === createdUser.alias,
+          "Unexpected name name"
+        );
+
         assert(result.result.token, "Missing token");
         done();
       }
@@ -219,6 +238,16 @@ describe("user:login", () => {
       result => {
         assert(result.status === 0, "Unexpected status");
         assert(result.result.userId === createdUserId, "Unexpected user id");
+        assert(result.result.name === createdUser.name, "Unexpected user name");
+        assert(
+          result.result.email === createdUser.email,
+          "Unexpected email name"
+        );
+        assert(
+          result.result.alias === createdUser.alias,
+          "Unexpected name name"
+        );
+
         assert(result.result.token, "Missing token");
         done();
       }
@@ -283,6 +312,7 @@ describe("user:search", () => {
         assert(result.result.length === 10, "Unexpected number of matches");
         assert(result.result[0].userId >= 0, "Unexpected userId");
         assert(result.result[0].name, "Missing name");
+        assert(result.result[0].email, "Missing name");
         assert(result.result[0].alias, "Missing alias");
         done();
       }
@@ -300,6 +330,10 @@ describe("user:search", () => {
         assert(result.result[0].userId >= 0, "Unexpected userId");
         assert(result.result[0].name === "searchUser 5", "Unexpected name");
         assert(result.result[0].alias === "searchUser_5", "Unexpected alias");
+        assert(
+          result.result[0].email === "searchUser_5@mail.com",
+          "Unexpected alias"
+        );
         done();
       }
     );
