@@ -20,7 +20,7 @@ user.create = ({ name, email, alias, password }) => {
     socket.emit('user:create', { name, email, alias, password }, response => {
       if (response.status === 0) {
         state.loggedIn = true;
-        window.localStorage.setItem('jwt', response.token);
+        window.localStorage.setItem('jwt', response.result.token);
       } else if (response.errors) {
         reject(response.errors);
       }
@@ -30,10 +30,10 @@ user.create = ({ name, email, alias, password }) => {
 
 user.loginEmailOrAliasPass = ({ auth, password }) => {
   return new Promise((resolve, reject) => {
-      socket.emit('user:login', { auth, password }, response => {
+    socket.emit('user:login', { auth, password }, response => {
       if (response.status === 0) {
         state.loggedIn = true;
-        window.localStorage.setItem('jwt', response.token);
+        window.localStorage.setItem('jwt', response.result.token);
       } else {
         reject(response);
       }
@@ -48,9 +48,13 @@ user.loginToken = () => {
     response => {
       if (response.status === 0) {
         state.loggedIn = true;
+        if (response.result.token) {
+          // Got new token - Store it
+          window.localStorage.setItem('jwt', response.result.token);
+        }
       } else if (response.status === 1) {
         state.loggedIn = false;
-        if (response.errors && response.errors[0].error === "InvalidToken") {
+        if (response.errors && response.errors[0].error === 'InvalidToken') {
           window.localStorage.removeItem('jwt');
         }
       }
