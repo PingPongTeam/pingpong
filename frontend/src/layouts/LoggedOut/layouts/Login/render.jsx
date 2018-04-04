@@ -1,13 +1,13 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import glamorous from "glamorous";
-import Form from "components/Form";
-import Input from "components/Input";
-import Button from "components/Button";
-import SecondaryButton from "components/SecondaryButton";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import glamorous from 'glamorous';
+import Form from 'components/Form';
+import Input from 'components/Input';
+import Button from 'components/Button';
+import SecondaryButton from 'components/SecondaryButton';
 
 const Title = glamorous.h1({
-  textAlign: "center"
+  textAlign: 'center'
 });
 
 const SignupRender = ({
@@ -21,35 +21,37 @@ const SignupRender = ({
 }) => {
   const handleSubmit = e => {
     e.preventDefault();
-    const email = e.target.email.value;
-    const password = e.target.password.value;
+    const email = e.target.email.value.trim();
+    const password = e.target.password.value.trim();
     handleSignin({ email, password });
   };
 
   const getErrorObject = code => {
     switch (code) {
-      case "required":
+      case 'required':
         return {
-          status: "danger",
-          text: "required"
+          status: 'danger',
+          text: 'required'
         };
-      case "wrong":
+      case 'wrong':
         return {
-          status: "danger",
-          text: "WROOOONG!"
+          status: 'danger',
+          text: 'WROOOONG!'
         };
       default:
         return {
-          status: "danger",
-          text: "unknown error"
+          status: 'danger',
+          text: 'unknown error'
         };
     }
   };
 
   const getErrorMessage = error => {
     switch (error) {
-      case "invalidUser":
-        return "Invalid email or password";
+      case 'invalidUser':
+        return 'Invalid email or password';
+      case 'unknown':
+        return 'Unknown error';
       default:
         return null;
     }
@@ -76,12 +78,12 @@ const SignupRender = ({
           status={passwordError && getErrorObject(passwordError).status}
           notice={passwordError && getErrorObject(passwordError).text}
         />
-        <Button style={{ marginTop: "1em" }} loading={isLoading}>
+        <Button style={{ marginTop: '1em' }} loading={isLoading}>
           Sign in
         </Button>
       </Form>
       <Link to="/signup">
-        <SecondaryButton style={{ marginTop: "1.5em" }}>
+        <SecondaryButton style={{ marginTop: '1.5em' }}>
           Create a new account
         </SecondaryButton>
       </Link>

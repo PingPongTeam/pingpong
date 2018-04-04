@@ -30,11 +30,13 @@ user.create = ({ name, email, alias, password }) => {
 
 user.loginEmailOrAliasPass = ({ auth, password }) => {
   return new Promise((resolve, reject) => {
-      socket.emit('user:login', { auth, password }, response => {
+    socket.emit('user:login', { auth, password }, response => {
       if (response.status === 0) {
+        console.log('login success', response);
         state.loggedIn = true;
         window.localStorage.setItem('jwt', response.token);
       } else {
+        console.log('login fail', response);
         reject(response);
       }
     });
@@ -50,7 +52,7 @@ user.loginToken = () => {
         state.loggedIn = true;
       } else if (response.status === 1) {
         state.loggedIn = false;
-        if (response.errors && response.errors[0].error === "InvalidToken") {
+        if (response.errors && response.errors[0].error === 'InvalidToken') {
           window.localStorage.removeItem('jwt');
         }
       }

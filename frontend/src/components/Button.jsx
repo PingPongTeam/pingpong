@@ -5,18 +5,19 @@ import Spinner from 'components/Spinner';
 
 const StyledButton = glamorous.button({
   width: '100%',
-  borderTop: `1px dashed rgb(${globalStyles.colors.dinboxTurquoise})`,
-  color: `rgb(${globalStyles.colors.dinboxBlue})`,
-  backgroundColor: `rgb(${globalStyles.colors.white})`,
+  color: `hsla(${globalStyles.colors.white}, 1)`,
+  backgroundColor: `hsla(${globalStyles.colors.success}, 1)`,
   fontSize: '23px',
+  fontWeight: 600,
   padding: '1.4em 1.5em',
   textTransform: 'uppercase',
+  borderRadius: globalStyles.borderRadius,
   cursor: 'pointer',
   ':hover': {
-    backgroundColor: `rgba(${globalStyles.colors.black}, .05)`
+    backgroundColor: `hsla(${globalStyles.colors.success}, .8)`
   },
   ':focus': {
-    backgroundColor: `rgba(${globalStyles.colors.black}, .1)`
+    backgroundColor: `hsla(${globalStyles.colors.success}, .8)`
   }
 });
 

@@ -9,24 +9,20 @@ const StyledForm = glamorous.form({
   maxWidth: 600
 });
 const ErrorMessage = glamorous.span({
-  backgroundColor: `rgb(${globalStyles.colors.danger})`,
+  backgroundColor: `hsl(${globalStyles.colors.danger})`,
   textAlign: 'center',
   padding: '5px 15px',
   color: 'white',
-  borderRadius: globalStyles.borderRadius,
+  borderRadius: globalStyles.borderRadius
 });
 
-const Form = ({
-  children,
-  onSubmit,
-  errorMessage = null
-}) => {
+const Form = ({ children, onSubmit, errorMessage = null }) => {
   return (
     <StyledForm onSubmit={onSubmit} noValidate>
-      {errorMessage && (<ErrorMessage>{errorMessage}</ErrorMessage>)}
+      {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
       {children}
     </StyledForm>
   );
-}
+};
 
 export default Form;

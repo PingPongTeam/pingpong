@@ -7,10 +7,13 @@ const StyledButton = glamorous.button({
   fontSize: '14px',
   padding: '1.7em',
   width: '100%',
-  color: `rgb(${globalStyles.colors.black})`,
-  backgroundColor: `rgb(${globalStyles.colors.white})`,
+  color: `hsla(${globalStyles.colors.white}, 1)`,
+  backgroundColor: 'transparent',
   ':hover': {
-    color: `black`
+    color: `hsla(${globalStyles.colors.success}, 1)`
+  },
+  ':focus': {
+    color: `hsla(${globalStyles.colors.success}, 1)`
   }
 });
 

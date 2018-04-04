@@ -28,13 +28,11 @@ class LoginContainer extends Component {
     }));
   }
 
-  async handleSignin({ email: rawEmail, password: rawPassword }) {
+  async handleSignin({ email, password }) {
     if (this.state.isLoading === true) {
       return;
     }
     this.setState(() => ({ validationObject: this.defaultValidationObject }));
-    const email = rawEmail.trim();
-    const password = rawPassword.trim();
     let passesValidation = true;
     if (email.length < 1) {
       this.setValidationState('email', 'required');
@@ -51,10 +49,16 @@ class LoginContainer extends Component {
     try {
       await user.loginEmailOrAliasPass({ auth: email, password });
     } catch (errorResponse) {
-      if (errorResponse.errors && errorResponse.errors[0].error === "InvalidUser") {
-        this.setValidationState('errorMessage', 'invalidUser');
-        console.log('invalid user error');
+      if (errorResponse.errors[0].error) {
+        switch (errorResponse) {
+          case 'InvalidUser':
+            this.setValidationState('errorMessage', 'invalidUser');
+            return;
+          default:
+            break;
+        }
       }
+      this.setValidationState('errorMessage', 'unknown');
     }
     this.setState(() => ({ isLoading: false }));
   }
