@@ -53,6 +53,7 @@ describe("user:create/user:remove", () => {
       },
       result => {
         assert(result.status === 1, "Unexpected status");
+        assert(result.errors.length === 1, "Should be 1 collision");
         assert(result.errors[0].hint === "alias", "Unexpected hint");
         assert(
           result.errors[0].error === "ValueInUse",
@@ -73,6 +74,7 @@ describe("user:create/user:remove", () => {
       },
       result => {
         assert(result.status === 1, "Unexpected status");
+        assert(result.errors.length === 1, "Should be 1 collision");
         assert(result.errors[0].hint === "email", "Unexpected hint");
         assert(
           result.errors[0].error === "ValueInUse",
@@ -93,6 +95,7 @@ describe("user:create/user:remove", () => {
       },
       result => {
         assert(result.status === 1, "Unexpected status");
+        assert(result.errors.length === 2, "Should be 2 collisions");
         assert(
           result.errors[0].error === "ValueInUse",
           "Unexpected error name"

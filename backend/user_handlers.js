@@ -111,10 +111,39 @@ function createUser(userContext, data) {
       [data.email, data.alias, data.name, passwdHash, passwdSalt],
       (err, result) => {
         if (err) {
-          // TODO: Can we detect if both email and/or alias is in use
-          // in one query? Now the first one detected is reflected in the error.
           if (err.code === "23505") {
-            // Some value is not unique
+            // Either alias or email (or both) was not unique. Test which one(s).
+            return pgp.query(
+              "SELECT id, email, alias FROM users WHERE email = $1 OR alias = $2",
+              [data.email, data.alias],
+              (err, result) => {
+                if (err) {
+                  userContext.log(
+                    "unhandled db error2: " + JSON.stringify(err)
+                  );
+                  return reject([{ error: errorCode.internal }]);
+                } else {
+                  let errorArray = [];
+                  result.rows.forEach(row => {
+                    if (row.alias === data.alias) {
+                      errorArray.push({
+                        hint: "alias",
+                        error: errorCode.inUse
+                      });
+                    }
+                    if (row.email === data.email) {
+                      errorArray.push({
+                        hint: "email",
+                        error: errorCode.inUse
+                      });
+                    }
+                  });
+                  if (errorArray.length > 0) {
+                    return reject(errorArray);
+                  }
+                }
+              }
+            );
             let valueName =
               err.constraint === "users_alias_key" ? "alias" : "email";
             return reject([{ hint: valueName, error: errorCode.inUse }]);
