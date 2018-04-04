@@ -133,7 +133,7 @@ const SearchInputRender = ({
                 handleResultKeyDown(e, result, index);
               }}
             >
-              {result.text}
+              {result.alias}
             </div>
           ))}
         </Results>

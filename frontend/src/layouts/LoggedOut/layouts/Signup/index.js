@@ -15,51 +15,58 @@ class SignupContainer extends Component {
       alias: null,
       password: null,
       errorMessage: null
-    }
+    };
     this.state = {
       isLoading: false,
       validationObject: this.defaultValidationObject
-    }
-    socket.on('user:signup', (message) => {
-      console.log('user:signup response from backend', message)
+    };
+    socket.on('user:signup', message => {
+      console.log('user:signup response from backend', message);
     });
   }
 
   setValidationState(input, statusCode) {
-    this.setState((prevState) => ({
-      validationObject: {...prevState.validationObject, [input]: statusCode}
+    this.setState(prevState => ({
+      validationObject: { ...prevState.validationObject, [input]: statusCode }
     }));
   }
 
-  async handleSignup({name: rawName, email: rawEmail, alias: rawAlias, password: rawPassword}) {
-    console.log('wat')
-    this.setState(() => ({validationObject: this.defaultValidationObject}));
+  async handleSignup({
+    name: rawName,
+    email: rawEmail,
+    alias: rawAlias,
+    password: rawPassword
+  }) {
+    console.log('wat');
+    this.setState(() => ({ validationObject: this.defaultValidationObject }));
     const name = rawName.trim();
     const email = rawEmail.trim();
     const alias = rawAlias.trim();
     const password = rawPassword.trim();
     let passesValidation = true;
-    if(name.length < 1) {
+    if (name.length < 1) {
       this.setValidationState('name', 'required');
       passesValidation = false;
     }
-    if(email.length < 1) {
+    if (email.length < 1) {
       this.setValidationState('email', 'required');
       passesValidation = false;
-    } else if(!emailValidator.validate(email)) {
+    } else if (!emailValidator.validate(email)) {
       this.setValidationState('email', 'invalidEmail');
       passesValidation = false;
     }
-    if(alias.length < 1) {
+    if (alias.length < 1) {
       this.setValidationState('alias', 'required');
       passesValidation = false;
     }
-    if(password.length < 1) {
+    if (password.length < 1) {
       this.setValidationState('password', 'required');
       passesValidation = false;
     }
-    if(passesValidation === false) { return; }
-    this.setState(() => ({isLoading: true}));
+    if (passesValidation === false) {
+      return;
+    }
+    this.setState(() => ({ isLoading: true }));
     try {
       await user.create({ name, email, alias, password });
     } catch (errors) {
@@ -71,12 +78,14 @@ class SignupContainer extends Component {
           } else if (error.hint === 'alias') {
             this.setValidationState('errorMessage', 'aliasInUse');
           }
+        } else {
+          this.setValidationState('errorMessage', 'unknown');
         }
       });
     }
-    this.setState(() => ({isLoading: false}));
+    this.setState(() => ({ isLoading: false }));
   }
-  
+
   render() {
     return Render({
       handleSignup: this.handleSignup,
@@ -84,6 +93,6 @@ class SignupContainer extends Component {
       isLoading: this.state.isLoading
     });
   }
-};
+}
 
 export default SignupContainer;

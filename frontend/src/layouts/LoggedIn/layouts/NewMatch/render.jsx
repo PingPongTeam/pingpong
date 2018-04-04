@@ -24,8 +24,7 @@ const TinyText = glamorous.div({
   marginTop: '10vh',
   fontSize: '16px',
   fontStyle: 'italic',
-  textTransform: 'uppercase',
-  color: 'rgba(0,0,0,.3)'
+  textTransform: 'uppercase'
 });
 const BottomControlWrapper = glamorous.div({
   display: 'flex',
@@ -35,7 +34,7 @@ const BottomControlWrapper = glamorous.div({
   width: '100%'
 });
 const CancelButton = glamorous.div({
-  borderTop: `1px dashed rgb(${globalStyles.colors.dinboxBlue})`,
+  borderTop: `1px dashed hsl(${globalStyles.colors.white})`,
   width: '100%'
 });
 
@@ -50,7 +49,7 @@ const NewMatchRender = ({
     return (
       <Wrapper>
         <h1>Game against</h1>
-        <OpponentName>{chosenOpponent.text}</OpponentName>
+        <OpponentName>{chosenOpponent.alias}</OpponentName>
         <TinyText>CURRENT TOTAL MATCH STATS</TinyText>
         <BottomControlWrapper>
           <Button onClick={handleStartMatch}>Start game</Button>

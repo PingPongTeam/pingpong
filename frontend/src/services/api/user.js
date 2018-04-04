@@ -4,8 +4,9 @@ import { socket } from './';
 export const user = {};
 
 user.search = ({ searchTerm }) => {
+  console.log('USER:SEARCH SENDING:', { aliasOrEmail: searchTerm });
   return new Promise((resolve, reject) => {
-    socket.emit('user:search', { searchTerm }, response => {
+    socket.emit('user:search', { aliasOrEmail: searchTerm }, response => {
       if (response.status === 0) {
         resolve(response.result);
       } else if (response.errors) {

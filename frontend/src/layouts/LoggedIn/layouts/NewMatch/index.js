@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import Render from './render';
+import { user } from 'services/api/user';
 
 class NewMatchContainer extends Component {
   constructor(props) {
@@ -22,40 +23,26 @@ class NewMatchContainer extends Component {
     }
     if (this.state.searchResult && searchString.length > 1) {
       const newReslut = this.state.serverSearchResult.filter(result => {
-        return result.text.toLowerCase().includes(searchString.toLowerCase());
+        return (
+          result.name.toLowerCase().includes(searchString.toLowerCase()) ||
+          result.alias.toLowerCase().includes(searchString.toLowerCase())
+        );
       });
+      console.log('filtered search result:', newReslut);
       this.setState(() => ({ searchResult: newReslut }));
       return;
     }
     if (searchString.length > 1 && !this.state.searchResult) {
-      // try {
-      //   const serverResult = await user.search({seachTerm: searchString});
-      //   this.setState(() => ({
-      //     searchResult: serverResult,
-      //     serverSearchResult: serverResult
-      //   }));
-      // } catch (e) {
-      //   user.logout();
-      // }
-      console.log('GOT RESPONSE');
-      const serverResult = [
-        {
-          text: 'OlleSandbög',
-          id: 1
-        },
-        {
-          text: 'OlleOllon',
-          id: 2
-        },
-        {
-          text: 'OllonFärs',
-          id: 3
-        }
-      ];
-      this.setState(() => ({
-        searchResult: serverResult,
-        serverSearchResult: serverResult
-      }));
+      try {
+        const serverResult = await user.search({ searchTerm: searchString });
+        console.log('GOT REAL RESPONSE', serverResult);
+        this.setState(() => ({
+          searchResult: serverResult,
+          serverSearchResult: serverResult
+        }));
+      } catch (e) {
+        console.log('EEEROROROOR', e);
+      }
     }
   }
 

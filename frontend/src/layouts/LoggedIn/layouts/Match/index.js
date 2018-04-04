@@ -9,7 +9,7 @@ class MatchContainer extends Component {
     this.state = {
       player: [
         {
-          text: 'Gren',
+          alias: 'Gren',
           id: 2,
           score: 0
         },

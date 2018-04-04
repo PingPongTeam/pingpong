@@ -53,7 +53,7 @@ const MatchRender = ({ player, addPoint, subtractPoint }) => {
               addPoint(0);
             }}
           >
-            {player[0].text}
+            {player[0].alias}
           </PlayerName>
           <PointChanger
             onClick={() => {
@@ -83,7 +83,7 @@ const MatchRender = ({ player, addPoint, subtractPoint }) => {
               addPoint(1);
             }}
           >
-            {player[1].text}
+            {player[1].alias}
           </PlayerName>
           <PointChanger
             onClick={() => {
