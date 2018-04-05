@@ -34,10 +34,9 @@ function randomString(length) {
 }
 
 function sha512(password, salt) {
-  var hash = crypto.createHmac("sha512", salt);
+  const hash = crypto.createHmac("sha512", salt);
   hash.update(password);
-  var value = hash.digest("hex");
-  return value;
+  return hash.digest("hex");
 }
 
 const aliasOrEmailRegex = new RegExp("^[a-zA-Z0-9_@.-]*$", "i");
@@ -112,7 +111,7 @@ function createUser(userContext, { data, replyOK, replyFail }) {
       if (err && err.code === "23505") {
         // Either alias or email (or both) was not unique. Test which one(s).
         pgp.query(
-          "SELECT id, email, alias FROM users WHERE email = $1 OR alias = $2",
+          "SELECT id, email, alias FROM users WHERE email = $1 OR alias = $2;",
           [data.email, data.alias],
           (err, result) => {
             let errorArray = [];
@@ -144,7 +143,7 @@ function createUser(userContext, { data, replyOK, replyFail }) {
       } else {
         // User was created - Generate token and return
         let userId = result.rows[0].id;
-        newToken(userId, data.email).then(function(token) {
+        newToken(userId, data.email).then(token => {
           userContext.log("Created user " + data.alias + " (" + userId + ")");
           markAuthed(
             userContext,
@@ -185,7 +184,7 @@ function removeUser(userContext, { data, replyOK, replyFail }) {
   } else {
     // Remove account and logout user
     userContext.pgp
-      .query("DELETE FROM users WHERE id = $1", [userContext.userId])
+      .query("DELETE FROM users WHERE id = $1;", [userContext.userId])
       .then(res => {
         userContext.log(JSON.stringify(res));
         userContext.log("User account deleted");
@@ -220,7 +219,7 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
   let pgp = userContext.pgp;
   if (data.token) {
     // Received token for authentication
-    jwt.verify(data.token, config.jwt.secret, function(err, decoded) {
+    jwt.verify(data.token, config.jwt.secret, (err, decoded) => {
       if (err) {
         userContext.log("Invalid token: " + JSON.stringify(err));
         replyFail([{ hint: "token", error: errorCode.invalidToken }]);
@@ -229,7 +228,7 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
         pgp
           .query(
             "SELECT id, email, alias, name, passwd_hash, passwd_salt" +
-              " FROM users WHERE id = $1",
+              " FROM users WHERE id = $1;",
             [decoded.userId]
           )
           .then(res => {
@@ -238,7 +237,7 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
             } else {
               let row = res.rows[0];
               newToken(row.id, row.email)
-                .then(function(token) {
+                .then(token => {
                   markAuthed(
                     userContext,
                     row.alias,
@@ -258,8 +257,8 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
                     token: token
                   });
                 })
-                .catch(function(error) {
-                  userContext.log("Error creating token: " + error);
+                .catch(err => {
+                  userContext.log("Error creating token: " + err);
                   replyFail([{ error: errorCode.internal }]);
                 });
             }
@@ -271,17 +270,17 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
     pgp
       .query(
         "SELECT id, email, alias, name, passwd_hash, passwd_salt" +
-          " FROM users WHERE email = $1 OR alias = $1",
+          " FROM users WHERE email = $1 OR alias = $1;",
         [data.auth]
       )
-      .then(function(res) {
+      .then(res => {
         if (res.rowCount === 1) {
           // Found user - Test if the supplied password is correct
           const row = res.rows[0];
           const incomming = sha512(data.password, row.passwd_salt);
           if (incomming === row.passwd_hash) {
             // Return a new token to the verified user
-            newToken(row.id, row.email).then(function(token) {
+            newToken(row.id, row.email).then(token => {
               // Mark user as authed and signed in
               markAuthed(
                 userContext,
@@ -317,10 +316,8 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
           replyFail([{ hint: "auth", error: errorCode.internal }]);
         }
       })
-      .catch(function(err) {
-        userContext.log(
-          "db error (" + JSON.stringify(data) + "): " + JSON.stringify(err)
-        );
+      .catch(err => {
+        userContext.log("db error (" + JSON.stringify(data) + "): " + err);
         replyFail([{ hint: "auth", error: errorCode.internal }]);
       });
   }
@@ -365,7 +362,7 @@ function searchUser({ log, pgp }, { data, replyOK, replyFail }) {
   pgp
     .query(
       "SELECT id, alias, email, name" +
-        " FROM users WHERE email ILIKE $1 OR alias ILIKE $1",
+        " FROM users WHERE email ILIKE $1 OR alias ILIKE $1;",
       [data.aliasOrEmail + "%"]
     )
     .then(result => {
