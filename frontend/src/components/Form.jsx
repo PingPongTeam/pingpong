@@ -12,6 +12,7 @@ const ErrorMessage = glamorous.span({
   backgroundColor: `hsl(${globalStyles.colors.danger})`,
   textAlign: 'center',
   padding: '5px 15px',
+  marginBottom: '1em',
   color: 'white',
   borderRadius: globalStyles.borderRadius
 });

@@ -27,11 +27,12 @@ const SpinnerWrapper = glamorous.div({
   position: 'relative'
 });
 
-const Button = ({ children, loading, ...rest }) => {
+const Button = ({ children, loading, margin, ...rest }) => {
   const textOpacity = loading ? 0 : 1;
+  const marginStyling = margin ? { margin } : { margin: '0' };
 
   return (
-    <StyledButton {...rest}>
+    <StyledButton style={marginStyling} {...rest}>
       {loading && (
         <SpinnerWrapper>
           <Spinner style={{ position: 'absolute' }} color="dinboxBlue" />

@@ -7,8 +7,7 @@ import uuid from 'services/utils/uuid';
 const Wrapper = glamorous.div({
   display: 'flex',
   flexDirection: 'column',
-  position: 'relative',
-  margin: '0'
+  position: 'relative'
 });
 const labelStyles = css({
   color: `hsla(${globalStyles.colors.white},1)`,
@@ -20,7 +19,7 @@ const labelStyles = css({
   backgroundColor: `hsla(${globalStyles.colors.blue},1)`
 });
 
-const Input = ({ value, label, notice, status, getRef, ...rest }) => {
+const Input = ({ value, label, notice, status, getRef, margin, ...rest }) => {
   const statusColor = status
     ? `hsla(${globalStyles.colors[status]}, 1)`
     : `hsla(${globalStyles.colors.white}, 1)`;
@@ -50,9 +49,10 @@ const Input = ({ value, label, notice, status, getRef, ...rest }) => {
   });
 
   const id = uuid();
+  const marginStyling = margin ? { margin } : { margin: '0 0 1em 0' };
 
   return (
-    <Wrapper>
+    <Wrapper style={marginStyling}>
       <label {...labelStyles} htmlFor={id}>
         {label} {notice && <span style={{ color: noticeColor }}>{notice}</span>}
       </label>

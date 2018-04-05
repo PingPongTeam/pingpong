@@ -1,4 +1,5 @@
 import state from 'services/state';
+import userState from 'services/state/user';
 import { socket } from './';
 
 export const user = {};
@@ -20,8 +21,10 @@ user.create = ({ name, email, alias, password }) => {
   return new Promise((resolve, reject) => {
     socket.emit('user:create', { name, email, alias, password }, response => {
       if (response.status === 0) {
-        state.loggedIn = true;
+        console.log('userObject:', response.result.userObject);
+        userState.setUser(response.result.userObject);
         window.localStorage.setItem('jwt', response.result.token);
+        state.loggedIn = true;
       } else if (response.errors) {
         reject(response.errors);
       }
@@ -35,6 +38,8 @@ user.loginEmailOrAliasPass = ({ auth, password }) => {
       if (response.status === 0) {
         console.log('login success', response);
         state.loggedIn = true;
+        console.log('userObject:', response.result.userObject);
+        userState.setUser(response.result.userObject);
         window.localStorage.setItem('jwt', response.result.token);
       } else {
         console.log('login fail', response);
@@ -50,10 +55,12 @@ user.loginToken = () => {
     { token: window.localStorage.getItem('jwt') },
     response => {
       if (response.status === 0) {
-        state.loggedIn = true;
         if (response.result.token) {
+          console.log('userObject:', response.result.userObject);
+          userState.setUser(response.result.userObject);
           // Got new token - Store it
           window.localStorage.setItem('jwt', response.result.token);
+          state.loggedIn = true;
         }
       } else if (response.status === 1) {
         state.loggedIn = false;

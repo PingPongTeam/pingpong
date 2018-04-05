@@ -156,10 +156,12 @@ function createUser(userContext, { data, replyOK, replyFail }) {
             passwdSalt
           );
           replyOK({
-            userId: userId,
-            email: data.email,
-            alias: data.alias,
-            name: data.name,
+            userObject: {
+              userId: userId,
+              email: data.email,
+              alias: data.alias,
+              name: data.name
+            },
             token: token
           });
         });
@@ -247,10 +249,12 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
                     row.passwdsalt
                   );
                   replyOK({
-                    userId: row.id,
-                    email: row.email,
-                    alias: row.alias,
-                    name: row.name,
+                    userObject: {
+                      userId: row.id,
+                      email: row.email,
+                      alias: row.alias,
+                      name: row.name
+                    },
                     token: token
                   });
                 })
@@ -289,10 +293,12 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
                 row.passwdsalt
               );
               replyOK({
-                userId: row.id,
-                email: row.email,
-                alias: row.alias,
-                name: row.name,
+                userObject: {
+                  userId: row.id,
+                  email: row.email,
+                  alias: row.alias,
+                  name: row.name
+                },
                 token: token
               });
             });

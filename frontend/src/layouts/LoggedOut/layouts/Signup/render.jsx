@@ -98,14 +98,10 @@ const SignupRender = ({
           status={passwordError && getErrorObject(passwordError).status}
           notice={passwordError && getErrorObject(passwordError).text}
         />
-        <Button style={{ marginTop: '1em' }} loading={isLoading}>
-          Create account
-        </Button>
+        <Button loading={isLoading}>Create account</Button>
       </Form>
       <Link to="/">
-        <SecondaryButton style={{ marginTop: '1.5em' }}>
-          sign in to existing account
-        </SecondaryButton>
+        <SecondaryButton>sign in to existing account</SecondaryButton>
       </Link>
     </div>
   );
