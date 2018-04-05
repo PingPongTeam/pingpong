@@ -3,11 +3,10 @@ import React, { Component } from 'react';
 import { css } from 'glamor';
 import globalStyles from 'globalStyles';
 
-
 const animation = css.keyframes({
   '0%, 80%, 100%': { transform: 'scale(0)' },
   '40%': { transform: 'scale(1.0)' }
-})
+});
 const wrapper = css({
   margin: '0 auto',
   width: '100%',
@@ -26,30 +25,29 @@ const wrapper = css({
     animationTimingFunction: 'ease-in-out',
     animationIterationCount: 'infinite',
     animationDirection: 'both'
-}
+  }
 });
 const bounce1 = css({
-  animationDelay: '-0.32s',
+  animationDelay: '-0.32s'
 });
 const bounce2 = css({
-  animationDelay: '-0.16s',
+  animationDelay: '-0.16s'
 });
 
 class Spinner extends Component {
-
   constructor(props) {
     super(props);
-    this.color = props.color ?
-      `rgb(${globalStyles.colors[props.color]})` :
-      `rgb(${globalStyles.colors.white})`;
+    this.color = props.color
+      ? `hsl(${globalStyles.colors[props.color]})`
+      : `hsl(${globalStyles.colors.white})`;
   }
 
   render() {
     return (
       <div {...this.props} className={wrapper}>
-        <div style={{backgroundColor: this.color}} className={bounce1} />
-        <div style={{backgroundColor: this.color}} className={bounce2} />
-        <div style={{backgroundColor: this.color}} />
+        <div style={{ backgroundColor: this.color }} className={bounce1} />
+        <div style={{ backgroundColor: this.color }} className={bounce2} />
+        <div style={{ backgroundColor: this.color }} />
       </div>
     );
   }

@@ -32,10 +32,10 @@ const Button = ({ children, loading, margin, ...rest }) => {
   const marginStyling = margin ? { margin } : { margin: '0' };
 
   return (
-    <StyledButton style={marginStyling} {...rest}>
+    <StyledButton style={marginStyling} {...rest} disabled={loading}>
       {loading && (
         <SpinnerWrapper>
-          <Spinner style={{ position: 'absolute' }} color="dinboxBlue" />
+          <Spinner style={{ position: 'absolute' }} color="white" />
         </SpinnerWrapper>
       )}
       <span style={{ opacity: textOpacity }}>{children}</span>

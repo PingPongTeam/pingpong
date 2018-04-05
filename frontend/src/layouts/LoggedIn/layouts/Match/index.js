@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { withRouter } from 'react-router-dom';
 import Render from './render';
 import userState from 'services/state/user';
 import { match } from 'services/api/match';
@@ -50,7 +51,7 @@ class MatchContainer extends Component {
     console.log(this.state.player[player]);
   }
 
-  submitMatch() {
+  async submitMatch() {
     this.setState(() => ({
       submittingMatch: true
     }));
@@ -63,7 +64,8 @@ class MatchContainer extends Component {
       score: this.state.player[1].score
     };
     try {
-      match.create({ player1, player2 });
+      await match.create({ player1, player2 });
+      this.props.history.push('/');
     } catch (e) {
       console.log('errorrrrrrrr');
     }
@@ -84,4 +86,4 @@ class MatchContainer extends Component {
   }
 }
 
-export default MatchContainer;
+export default withRouter(MatchContainer);
