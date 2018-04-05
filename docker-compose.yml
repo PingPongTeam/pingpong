@@ -12,6 +12,8 @@ services:
     environment:
       POSTGRES_USER: pingpong
       POSTGRES_PASSWORD: pingpongpassword
+    volumes:
+      - dbsessionsave:/var/lib/postgresql/data
 
   nodefrontend:
     build:
@@ -65,3 +67,4 @@ services:
 volumes:
   notusedfront:
   notusedback:
+  dbsessionsave:
