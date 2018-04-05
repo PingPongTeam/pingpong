@@ -11,6 +11,15 @@ var userState = {
     this.email = userObject.email;
     this.alias = userObject.alias;
     this.name = userObject.name;
+  },
+
+  getUser() {
+    return {
+      userId: this.userId,
+      email: this.email,
+      alias: this.alias,
+      name: this.name
+    };
   }
 };
 

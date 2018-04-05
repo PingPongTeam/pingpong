@@ -365,7 +365,7 @@ function searchUser({ log, pgp }, { data, replyOK, replyFail }) {
   pgp
     .query(
       "SELECT id, alias, email, name" +
-        " FROM users WHERE email LIKE $1 OR alias LIKE $1",
+        " FROM users WHERE email ILIKE $1 OR alias ILIKE $1",
       [data.aliasOrEmail + "%"]
     )
     .then(result => {

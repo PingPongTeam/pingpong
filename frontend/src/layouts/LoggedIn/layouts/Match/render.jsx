@@ -43,7 +43,14 @@ const PointChanger = glamorous.div({
   textAlign: 'center'
 });
 
-const MatchRender = ({ player, addPoint, subtractPoint }) => {
+const MatchRender = ({
+  player,
+  addPoint,
+  subtractPoint,
+  submitMatch,
+  submittingMatch
+}) => {
+  console.log('submitting match?:', submittingMatch);
   return (
     <Wrapper>
       <Players>
@@ -108,7 +115,9 @@ const MatchRender = ({ player, addPoint, subtractPoint }) => {
           </PointChanger>
         </Player>
       </Players>
-      <Button>End Match</Button>
+      <Button onClick={submitMatch} loading={submittingMatch}>
+        End Match
+      </Button>
     </Wrapper>
   );
 };

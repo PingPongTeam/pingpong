@@ -1,16 +1,19 @@
 import { Component } from 'react';
 import Render from './render';
+import userState from 'services/state/user';
+import { match } from 'services/api/match';
 
 class MatchContainer extends Component {
   constructor(props) {
     super(props);
     this.addPoint = this.addPoint.bind(this);
     this.subtractPoint = this.subtractPoint.bind(this);
+    this.submitMatch = this.submitMatch.bind(this);
     this.state = {
+      submittingMatch: false,
       player: [
         {
-          alias: 'Gren',
-          id: 2,
+          ...userState.getUser(),
           score: 0
         },
         {
@@ -32,21 +35,51 @@ class MatchContainer extends Component {
     }));
   }
   subtractPoint(player) {
+    this.setState(prevState => {
+      const newScore =
+        prevState.player[player].score <= 0
+          ? 0
+          : prevState.player[player].score - 1;
+      return {
+        player: [
+          ...prevState.player,
+          (prevState.player[player].score = newScore)
+        ]
+      };
+    });
     console.log(this.state.player[player]);
-    this.setState(prevState => ({
-      player: [
-        ...prevState.player,
-        (prevState.player[player].score = prevState.player[player].score - 1)
-      ]
+  }
+
+  submitMatch() {
+    this.setState(() => ({
+      submittingMatch: true
+    }));
+    const player1 = {
+      id: this.state.player[0].userId,
+      score: this.state.player[0].score
+    };
+    const player2 = {
+      id: this.state.player[1].userId,
+      score: this.state.player[1].score
+    };
+    try {
+      match.create({ player1, player2 });
+    } catch (e) {
+      console.log('errorrrrrrrr');
+    }
+    this.setState(() => ({
+      submittingMatch: false
     }));
   }
 
   render() {
-    const { player } = this.state;
+    const { player, submittingMatch } = this.state;
     return Render({
       player,
+      submittingMatch,
       addPoint: this.addPoint,
-      subtractPoint: this.subtractPoint
+      subtractPoint: this.subtractPoint,
+      submitMatch: this.submitMatch
     });
   }
 }

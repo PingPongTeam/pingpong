@@ -24,7 +24,7 @@ class NewMatchContainer extends Component {
     if (this.state.searchResult && searchString.length > 1) {
       const newReslut = this.state.serverSearchResult.filter(result => {
         return (
-          result.name.toLowerCase().includes(searchString.toLowerCase()) ||
+          result.email.toLowerCase().includes(searchString.toLowerCase()) ||
           result.alias.toLowerCase().includes(searchString.toLowerCase())
         );
       });
