@@ -94,9 +94,9 @@ CREATE TABLE public.users (
     alias character varying(128) NOT NULL,
     email character varying(128) NOT NULL,
     name character varying(128),
-    passwdhash character varying(128) NOT NULL,
-    passwdsalt character varying(16) NOT NULL,
-    createdate timestamp without time zone DEFAULT now(),
+    passwd_hash character varying(128) NOT NULL,
+    passwd_salt character varying(16) NOT NULL,
+    create_date timestamp without time zone DEFAULT now(),
     deleted boolean DEFAULT false NOT NULL
 );
 

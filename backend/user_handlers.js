@@ -105,7 +105,7 @@ function createUser(userContext, { data, replyOK, replyFail }) {
   const passwdSalt = randomString(16);
   const passwdHash = sha512(data.password, passwdSalt);
   pgp.query(
-    "INSERT into users(email, alias, name, passwdHash, passwdSalt) VALUES " +
+    "INSERT into users(email, alias, name, passwd_hash, passwd_salt) VALUES " +
       "($1, $2, $3, $4, $5) RETURNING id;",
     [data.email, data.alias, data.name, passwdHash, passwdSalt],
     (err, result) => {
@@ -228,7 +228,7 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
         // Ensure that user exists in db
         pgp
           .query(
-            "SELECT id, email, alias, name, passwdhash, passwdsalt" +
+            "SELECT id, email, alias, name, passwd_hash, passwd_salt" +
               " FROM users WHERE id = $1",
             [decoded.userId]
           )
@@ -245,8 +245,8 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
                     row.email,
                     row.id,
                     token,
-                    row.passwdhash,
-                    row.passwdsalt
+                    row.passwd_hash,
+                    row.passwd_salt
                   );
                   replyOK({
                     userObject: {
@@ -270,7 +270,7 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
     // Received alias/email and password for authentication
     pgp
       .query(
-        "SELECT id, email, alias, name, passwdhash, passwdsalt" +
+        "SELECT id, email, alias, name, passwd_hash, passwd_salt" +
           " FROM users WHERE email = $1 OR alias = $1",
         [data.auth]
       )
@@ -278,8 +278,8 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
         if (res.rowCount === 1) {
           // Found user - Test if the supplied password is correct
           const row = res.rows[0];
-          const incomming = sha512(data.password, row.passwdsalt);
-          if (incomming === row.passwdhash) {
+          const incomming = sha512(data.password, row.passwd_salt);
+          if (incomming === row.passwd_hash) {
             // Return a new token to the verified user
             newToken(row.id, row.email).then(function(token) {
               // Mark user as authed and signed in
@@ -289,8 +289,8 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
                 row.email,
                 row.id,
                 token,
-                row.passwdhash,
-                row.passwdsalt
+                row.passwd_hash,
+                row.passwd_salt
               );
               replyOK({
                 userObject: {
