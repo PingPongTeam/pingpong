@@ -83,25 +83,6 @@ function executeCommand(userContext, command, data, socketReply) {
     .catch(errorArray => {
       replyErrorLog(command.name, data, userContext, socketReply, errorArray);
     });
-
-  /*.then(function(result) {
-      userContext.log("'" + command.name + "' was executed succesfully");
-      return socketReply({ status: 0, result: result });
-    })
-    .catch(function(errorArray) {
-      let shortError = errorArray
-        .map(r => "" + r.hint + " (" + r.error + ")")
-        .join(", ");
-      userContext.log(
-        "Error executing '" +
-          command.name +
-          "' (" +
-          JSON.stringify(data) +
-          "): " +
-          shortError
-      );
-      return socketReply({ status: 1, errors: errorArray });
-    });*/
 }
 
 let connectionCounter = 0;
