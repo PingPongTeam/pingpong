@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.8
--- Dumped by pg_dump version 9.6.8
+-- Dumped from database version 10.3
+-- Dumped by pg_dump version 10.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -48,6 +48,44 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: match_results; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.match_results (
+    id bigint NOT NULL,
+    player1_id bigint NOT NULL,
+    player2_id bigint NOT NULL,
+    player1_score integer,
+    player2_score integer,
+    start_date timestamp without time zone DEFAULT now(),
+    end_date timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.match_results OWNER TO postgres;
+
+--
+-- Name: match_results_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.match_results_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.match_results_id_seq OWNER TO postgres;
+
+--
+-- Name: match_results_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.match_results_id_seq OWNED BY public.match_results.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -56,9 +94,9 @@ CREATE TABLE public.users (
     alias character varying(128) NOT NULL,
     email character varying(128) NOT NULL,
     name character varying(128),
-    passwdhash character varying(128) NOT NULL,
-    passwdsalt character varying(16) NOT NULL,
-    createdate timestamp without time zone DEFAULT now(),
+    passwd_hash character varying(128) NOT NULL,
+    passwd_salt character varying(16) NOT NULL,
+    create_date timestamp without time zone DEFAULT now(),
     deleted boolean DEFAULT false NOT NULL
 );
 
@@ -87,10 +125,25 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
+-- Name: match_results id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match_results ALTER COLUMN id SET DEFAULT nextval('public.match_results_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Name: match_results match_results_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match_results
+    ADD CONSTRAINT match_results_pkey PRIMARY KEY (id);
 
 
 --

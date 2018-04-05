@@ -10,6 +10,7 @@ const AccessLevel = require("./access_level.js");
 const dbHelpers = require("./db_helpers.js");
 const errorCode = require("./error_code.js");
 const userHandlers = require("./user_handlers.js");
+const matchHandlers = require("./match_handlers.js");
 
 /* Example command handler:
   {
@@ -21,7 +22,7 @@ const userHandlers = require("./user_handlers.js");
 */
 
 const log = common.log;
-const commandHandlers = [].concat(userHandlers);
+const commandHandlers = [].concat(userHandlers, matchHandlers);
 
 log("Connecting to " + config.db.uri);
 const pgp = new Pool({ connectionString: config.db.uri });
