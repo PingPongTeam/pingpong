@@ -4,14 +4,14 @@ const match = {};
 
 match.create_validate = function({ pgp, log }, data) {
   function validatePlayerObj(hint, player, errorArray) {
-    if (!player || !player.id || !player.score) {
-      errorArray.push({ hint: hint, error: errorCode.missingValue });
+      if (!player || !player.id || !(player.score >= 0)) {
+          errorArray.push({ hint: hint, error: errorCode.invalidValue });
     }
   }
 
   let errorArray = [];
   validatePlayerObj("player1", data.player1, errorArray);
-  validatePlayerObj("player2", data.player2, errorArray);
+    validatePlayerObj("player2", data.player2, errorArray);
   if (errorArray.length > 0) {
     return Promise.reject(errorArray);
   }
