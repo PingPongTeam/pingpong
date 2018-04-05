@@ -50,15 +50,15 @@ class LoginContainer extends Component {
       await user.loginEmailOrAliasPass({ auth: email, password });
     } catch (errorResponse) {
       if (errorResponse.errors[0].error) {
-        switch (errorResponse) {
+        switch (errorResponse.errors[0].error) {
           case 'InvalidUser':
             this.setValidationState('errorMessage', 'invalidUser');
-            return;
+            break;
           default:
+            this.setValidationState('errorMessage', 'unknown');
             break;
         }
       }
-      this.setValidationState('errorMessage', 'unknown');
     }
     this.setState(() => ({ isLoading: false }));
   }
