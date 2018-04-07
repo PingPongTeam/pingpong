@@ -2,16 +2,26 @@ const errorCode = require("./error_code.js");
 const AccessLevel = require("./access_level.js");
 const match = {};
 
-match.create_validate = function({ pgp, log }, data) {
+match.create_validate = function({ user, accessLevel, pgp, log }, data) {
   function validatePlayerObj(hint, player, errorArray) {
-      if (!player || !player.id || !(player.score >= 0)) {
-          errorArray.push({ hint: hint, error: errorCode.invalidValue });
+    if (!player || !player.id || !(player.score >= 0)) {
+      errorArray.push({ hint: hint, error: errorCode.invalidValue });
     }
   }
 
   let errorArray = [];
   validatePlayerObj("player1", data.player1, errorArray);
-    validatePlayerObj("player2", data.player2, errorArray);
+  validatePlayerObj("player2", data.player2, errorArray);
+  if (errorArray.length === 0) {
+    if (
+      accessLevel == AccessLevel.user &&
+      user.userId !== data.player1.id &&
+      user.userId !== data.player2.id
+    ) {
+      log("A user can't create a match between two other players.");
+      errorArray.push({ error: errorCode.invalidUser });
+    }
+  }
   if (errorArray.length > 0) {
     return Promise.reject(errorArray);
   }
@@ -36,18 +46,69 @@ match.create = function({ pgp, log }, { data, replyOK, replyFail }) {
 };
 
 match.get_validate = function({ pgp, log }, data) {
-  log("TODO: IMPLEMENT");
   return Promise.resolve();
 };
 
-match.get = function({ pgp, log }, { data, replyOK, replyFail }) {
-  log("TODO: IMPLEMENT");
+match.get = function({ pgp, log, user }, { data, replyOK, replyFail }) {
+  function matchFromDbMatch(row) {
+    return {
+      matchId: row.id,
+      player1: { id: row.player1_id, score: row.player1_score },
+      player2: { id: row.player2_id, score: row.player2_score },
+      date: row.end_date
+    };
+  }
+
+  if (data.matchId) {
+    pgp
+      .query(
+        "SELECT id, player1_id, player1_score, player2_id, player2_score, end_date" +
+          " FROM match_results WHERE id = $1;",
+        [data.matchId]
+      )
+      .then(res => {
+        const match = matchFromDbMatch(res.rows[0]);
+        replyOK({ matches: [match] });
+      })
+      .catch(err => {
+        log("db error (" + JSON.stringify(data) + "): " + err);
+        replyFail([{ error: errorCode.internal }]);
+      });
+  } else {
+    const userId1 = data.userId || data.userId1 || user.userId;
+    const userId2 = data.userId2 || userId1;
+    const betweenUsers = userId1 !== userId2 ? true : false;
+    log("Get matches of user " + userId1 + " and " + userId2);
+    pgp
+      .query(
+        "SELECT id, player1_id, player1_score, player2_id, player2_score, end_date" +
+          " FROM match_results WHERE player1_id = $1" +
+          (betweenUsers ? "AND" : "OR") +
+          " player2_id = $2;",
+        [userId1, userId2]
+      )
+      .then(res => {
+        let matches = [];
+        res.rows.forEach(row => {
+          const match = matchFromDbMatch(row);
+          log(JSON.stringify(match));
+          matches.push(match);
+        });
+        replyOK({ matches: matches });
+      })
+      .catch(err => {
+        log("db error (" + JSON.stringify(data) + "): " + err);
+        replyFail([{ error: errorCode.internal }]);
+      });
+  }
 };
 
 const handlers = [
   {
+    // A user can create match between self and other player.
+    // Admin can create match between anyone.
     name: "match:create",
-    minAccessLevel: AccessLevel.any,
+    minAccessLevel: AccessLevel.user,
     validate: match.create_validate,
     handler: match.create
   },
@@ -57,7 +118,7 @@ const handlers = [
     // Provide matchId to get specific match.
     name: "match:get",
     minAccessLevel: AccessLevel.user,
-    validate: match.get.validate,
+    validate: match.get_validate,
     handler: match.get
   }
 ];
