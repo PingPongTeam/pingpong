@@ -22,9 +22,19 @@ user.create = ({ name, email, alias, password }) => {
     socket.emit('user:create', { name, email, alias, password }, response => {
       if (response.status === 0) {
         console.log('userObject:', response.result.userObject);
-        userState.setUser(response.result.userObject);
-        window.localStorage.setItem('jwt', response.result.token);
-        state.loggedIn = true;
+        socket.emit(
+          'user:login',
+          { token: response.result.token },
+          response => {
+            if (response.status === 0) {
+              userState.setUser(response.result.userObject);
+              window.localStorage.setItem('jwt', response.result.token);
+              state.loggedIn = true;
+            } else if (response.errors) {
+              reject(response.errors);
+            }
+          }
+        );
       } else if (response.errors) {
         reject(response.errors);
       }

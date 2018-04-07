@@ -9,6 +9,20 @@ const socketOpts = {
   reconnection: false
 };
 
+function createUser(socket, user) {
+  return new Promise((fulfill, reject) => {
+    socket.emit("user:create", user, result => {
+      if (result.status === 0) {
+        user.id = result.result.userObject.userId;
+        user.token = result.result.token;
+        fulfill(user);
+      } else {
+        reject(result.errors);
+      }
+    });
+  });
+}
+
 describe("user:create/user:remove", () => {
   let socket;
   before("Connect to backend", () => {
@@ -25,28 +39,27 @@ describe("user:create/user:remove", () => {
   });
 
   const randstr = Math.floor(Date.now() / 1000).toString();
+  const user = {
+    alias: "myalias" + randstr,
+    email: "email_" + randstr + "@host.com",
+    name: "Randomuser " + randstr,
+    password: "StupidPassword"
+  };
   it("non existing user", done => {
-    socket.emit(
-      "user:create",
-      {
-        alias: "myalias" + randstr,
-        email: "email_" + randstr + "@host.com",
-        name: "Randomuser " + randstr,
-        password: "StupidPassword"
-      },
-      result => {
-        assert(result.status === 0, "Unexpected status");
-        assert(result.result.userId >= 0, "Unexpected userId");
-        assert(result.result.token, "Missing token");
-        done();
-      }
-    );
+    socket.emit("user:create", user, result => {
+      user.token = result.result.token;
+      user.id = result.result.userId;
+      assert(result.status === 0, "Unexpected status");
+      assert(result.result.userObject.userId >= 0, "Unexpected userId");
+      assert(result.result.token, "Missing token");
+      done();
+    });
   });
   it("existing alias", done => {
     socket.emit(
       "user:create",
       {
-        alias: "myalias" + randstr,
+        alias: user.alias,
         email: "whatever@host.com",
         name: "Noname User",
         password: "StupidPassword"
@@ -68,7 +81,7 @@ describe("user:create/user:remove", () => {
       "user:create",
       {
         alias: "whatever",
-        email: "email_" + randstr + "@host.com",
+        email: user.email,
         name: "Noname User",
         password: "StupidPassword"
       },
@@ -88,8 +101,8 @@ describe("user:create/user:remove", () => {
     socket.emit(
       "user:create",
       {
-        alias: "myalias" + randstr,
-        email: "email_" + randstr + "@host.com",
+        alias: user.alias,
+        email: user.email,
         name: "Noname User",
         password: "StupidPassword"
       },
@@ -104,6 +117,19 @@ describe("user:create/user:remove", () => {
       }
     );
   });
+  it("login", done => {
+    socket.emit(
+      "user:login",
+      {
+        token: user.token
+      },
+      result => {
+        assert(result.status === 0, "Unexpected status");
+        done();
+      }
+    );
+  });
+
   it("remove self", done => {
     socket.emit(
       "user:remove",
@@ -139,21 +165,11 @@ describe("user:login", () => {
     name: "UniqueUser " + randstr,
     password: "StupidPassword"
   };
-  let createdUserId;
-  let createdUserToken;
   before("Connect to backend", () => {
     return new Promise((fulfill, reject) => {
       socket = io.connect(socketUrl, socketOpts);
       socket.on("connect", () => {
-        socket.emit("user:create", createdUser, result => {
-          if (result.status === 0) {
-            createdUserId = result.result.userId;
-            createdUserToken = result.result.token;
-            return fulfill();
-          } else {
-            return reject();
-          }
-        });
+        return createUser(socket, createdUser).then(fulfill);
       });
     });
   });
@@ -189,14 +205,20 @@ describe("user:login", () => {
       },
       result => {
         assert(result.status === 0, "Unexpected status");
-        assert(result.result.userId === createdUserId, "Unexpected user id");
-        assert(result.result.name === createdUser.name, "Unexpected user name");
         assert(
-          result.result.email === createdUser.email,
+          result.result.userObject.userId === createdUser.id,
+          "Unexpected user id"
+        );
+        assert(
+          result.result.userObject.name === createdUser.name,
+          "Unexpected user name"
+        );
+        assert(
+          result.result.userObject.email === createdUser.email,
           "Unexpected email name"
         );
         assert(
-          result.result.alias === createdUser.alias,
+          result.result.userObject.alias === createdUser.alias,
           "Unexpected name name"
         );
         assert(result.result.token, "Missing token");
@@ -213,17 +235,22 @@ describe("user:login", () => {
       },
       result => {
         assert(result.status === 0, "Unexpected status");
-        assert(result.result.userId === createdUserId, "Unexpected user id");
-        assert(result.result.name === createdUser.name, "Unexpected user name");
         assert(
-          result.result.email === createdUser.email,
+          result.result.userObject.userId === createdUser.id,
+          "Unexpected user id"
+        );
+        assert(
+          result.result.userObject.name === createdUser.name,
+          "Unexpected user name"
+        );
+        assert(
+          result.result.userObject.email === createdUser.email,
           "Unexpected email name"
         );
         assert(
-          result.result.alias === createdUser.alias,
+          result.result.userObject.alias === createdUser.alias,
           "Unexpected name name"
         );
-
         assert(result.result.token, "Missing token");
         done();
       }
@@ -233,21 +260,26 @@ describe("user:login", () => {
     socket.emit(
       "user:login",
       {
-        token: createdUserToken
+        token: createdUser.token
       },
       result => {
         assert(result.status === 0, "Unexpected status");
-        assert(result.result.userId === createdUserId, "Unexpected user id");
-        assert(result.result.name === createdUser.name, "Unexpected user name");
         assert(
-          result.result.email === createdUser.email,
+          result.result.userObject.userId === createdUser.id,
+          "Unexpected user id"
+        );
+        assert(
+          result.result.userObject.name === createdUser.name,
+          "Unexpected user name"
+        );
+        assert(
+          result.result.userObject.email === createdUser.email,
           "Unexpected email name"
         );
         assert(
-          result.result.alias === createdUser.alias,
+          result.result.userObject.alias === createdUser.alias,
           "Unexpected name name"
         );
-
         assert(result.result.token, "Missing token");
         done();
       }

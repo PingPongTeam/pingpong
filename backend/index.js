@@ -92,14 +92,13 @@ io.on("connection", function onConnection(socket) {
   let userContext = {
     accessLevel: AccessLevel.any,
     socket: socket,
-    authed: false,
     pgp: pgp
   };
   userContext.log = function(...args) {
     const prefix =
       "[" +
-      (userContext.email
-        ? userContext.email
+      (userContext.user
+        ? userContext.user.email
         : "unauthed " + connectionCounter) +
       " (" +
       userContext.accessLevel.shortName +

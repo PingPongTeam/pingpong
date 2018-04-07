@@ -75,26 +75,18 @@ function createUserValidate(ctx, data) {
   return Promise.resolve();
 }
 
-function markAuthed(
-  userContext,
-  alias,
-  email,
-  userId,
-  token,
-  passwdHash,
-  passwdSalt
-) {
+function markAuthed(userContext, user, auth) {
   let accessLevel = AccessLevel.user;
   userContext.log(
-    "signed in (as " + email + ", with access level '" + accessLevel.name + "')"
+    "signed in (as " +
+      user.email +
+      ", with access level '" +
+      accessLevel.name +
+      "')"
   );
+  userContext.user = user;
+  userContext.auth = auth;
   userContext.accessLevel = accessLevel;
-
-  userContext.token = token;
-  userContext.userId = userId;
-  userContext.email = email;
-  userContext.passwdHash = passwdHash;
-  userContext.passwdSalt = passwdSalt;
 }
 
 // Create user'
@@ -145,15 +137,6 @@ function createUser(userContext, { data, replyOK, replyFail }) {
         let userId = result.rows[0].id;
         newToken(userId, data.email).then(token => {
           userContext.log("Created user " + data.alias + " (" + userId + ")");
-          markAuthed(
-            userContext,
-            data.alias,
-            data.email,
-            userId,
-            token,
-            passwdHash,
-            passwdSalt
-          );
           replyOK({
             userObject: {
               userId: userId,
@@ -171,23 +154,27 @@ function createUser(userContext, { data, replyOK, replyFail }) {
 
 function removeUserValidate(userContext, data) {
   if (!data.password || !data.password.length) {
-    errorArray.push({ hint: "password", error: errorCode.missingValue });
+    Promise.reject([{ hint: "password", error: errorCode.missingValue }]);
   }
   return Promise.resolve();
 }
 
 function removeUser(userContext, { data, replyOK, replyFail }) {
   // Remove the logged in user
-  const incommingHash = sha512(data.password, userContext.passwdSalt);
-  if (incommingHash !== userContext.passwdHash) {
+  let { log, auth, user, pgp } = userContext;
+  const incommingHash = sha512(data.password, userContext.auth.passwdSalt);
+  log(JSON.stringify(data));
+  log(JSON.stringify(auth));
+  log(incommingHash);
+  if (incommingHash !== auth.passwdHash) {
     replyFail([{ hint: "password", error: errorCode.invalidValue }]);
   } else {
     // Remove account and logout user
-    userContext.pgp
+    pgp
       .query("DELETE FROM users WHERE id = $1;", [userContext.userId])
       .then(res => {
-        userContext.log(JSON.stringify(res));
-        userContext.log("User account deleted");
+        log(JSON.stringify(res));
+        log("User account deleted");
         _logoutUser(userContext);
         replyOK({});
       });
@@ -236,25 +223,23 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
               replyFail([{ hint: "token", error: errorCode.invalidUser }]);
             } else {
               let row = res.rows[0];
+              const user = {
+                userId: row.id,
+                alias: row.alias,
+                email: row.email,
+                name: row.name
+              };
+              const auth = {
+                token: data.token,
+                passwdHash: row.passwd_hash,
+                passwdSalt: row.passwd_salt
+              };
               newToken(row.id, row.email)
                 .then(token => {
-                  markAuthed(
-                    userContext,
-                    row.alias,
-                    row.email,
-                    row.id,
-                    token,
-                    row.passwd_hash,
-                    row.passwd_salt
-                  );
+                  markAuthed(userContext, user, auth);
                   replyOK({
-                    userObject: {
-                      userId: row.id,
-                      email: row.email,
-                      alias: row.alias,
-                      name: row.name
-                    },
-                    token: token
+                    userObject: user,
+                    token: data.token
                   });
                 })
                 .catch(err => {
@@ -282,22 +267,20 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
             // Return a new token to the verified user
             newToken(row.id, row.email).then(token => {
               // Mark user as authed and signed in
-              markAuthed(
-                userContext,
-                row.alias,
-                row.email,
-                row.id,
-                token,
-                row.passwd_hash,
-                row.passwd_salt
-              );
+              const user = {
+                userId: row.id,
+                alias: row.alias,
+                email: row.email,
+                name: row.name
+              };
+              const auth = {
+                token: token,
+                passwsHash: row.passwd_hash,
+                passwdSalt: row.passwd_salt
+              };
+              markAuthed(userContext, user, auth);
               replyOK({
-                userObject: {
-                  userId: row.id,
-                  email: row.email,
-                  alias: row.alias,
-                  name: row.name
-                },
+                userObject: user,
                 token: token
               });
             });
@@ -330,9 +313,8 @@ function logoutUserValidate({}, data) {
 function _logoutUser(userContext) {
   userContext.log("logged out");
   userContext.accessLevel = AccessLevel.any;
-  userContext.token = undefined;
-  userContext.userId = undefined;
-  userContext.userDesc = undefined;
+  userContext.user = undefined;
+  userContext.auth = undefined;
 }
 
 function logoutUser(userContext, { data, replyOK, replyFail }) {
