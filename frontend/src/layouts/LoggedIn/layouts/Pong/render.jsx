@@ -1,8 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import glamorous from 'glamorous';
-import SearchInput from 'components/SearchInput';
-import Button from 'components/Button';
 import SecondaryButton from 'components/SecondaryButton';
 
 const Wrapper = glamorous.div({
@@ -23,8 +21,14 @@ const BottomControlWrapper = glamorous.div({
 const PongRender = ({ game }) => {
   return (
     <Wrapper onKeyDown={game.keyDown}>
-      <h1>PONG</h1>
+      <h1>
+        {game.game.scoreTable[0].name} vs {game.game.scoreTable[1].name}
+      </h1>
       <canvas ref="playfield" />
+      <h3>
+        {game.game.scoreTable[0].gameScore} |{' '}
+        {game.game.scoreTable[1].gameScore}
+      </h3>
       <BottomControlWrapper>
         <Link to="/">
           <SecondaryButton>Cancel</SecondaryButton>
