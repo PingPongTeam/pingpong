@@ -6,6 +6,7 @@ import state from 'services/state';
 import Dashboard from './layouts/Dashboard';
 import NewMatch from './layouts/NewMatch';
 import Match from './layouts/Match';
+import Pong from './layouts/Pong';
 
 const Wrapper = glamorous.div({
   display: 'flex',
@@ -22,6 +23,7 @@ const LoggedIn = () => {
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/match/new" component={NewMatch} />
         <Route path="/match/ongoing" component={Match} />
+        <Route path="/pong" component={Pong} />
         <Redirect from="/" exact to="/dashboard" />
         <Redirect to="/404" />
       </Switch>
