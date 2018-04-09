@@ -2,7 +2,7 @@ import io from 'socket.io-client';
 import state from 'services/state';
 import { user } from './user';
 
-let backendHost = process.env.REACT_APP_BACKEND_HOST || 'localhost';
+let backendHost = window.location.hostname;
 let backendPort = process.env.REACT_APP_BACKEND_PORT || '3001';
 
 export const socket = io(backendHost + ':' + backendPort);
