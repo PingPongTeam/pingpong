@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import Render from './render';
 import { user } from 'services/api/user';
+import userState from 'services/state/user';
 
 class NewMatchContainer extends Component {
   constructor(props) {
@@ -24,8 +25,9 @@ class NewMatchContainer extends Component {
     if (this.state.searchResult && searchString.length > 1) {
       const newReslut = this.state.serverSearchResult.filter(result => {
         return (
-          result.email.toLowerCase().includes(searchString.toLowerCase()) ||
-          result.alias.toLowerCase().includes(searchString.toLowerCase())
+          (result.email.toLowerCase().includes(searchString.toLowerCase()) ||
+            result.alias.toLowerCase().includes(searchString.toLowerCase())) &&
+          result.userId !== userState.userId
         );
       });
       console.log('filtered search result:', newReslut);

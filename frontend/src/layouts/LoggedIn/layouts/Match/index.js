@@ -2,7 +2,7 @@ import { Component } from 'react';
 import { withRouter } from 'react-router-dom';
 import Render from './render';
 import userState from 'services/state/user';
-import { match } from 'services/api/match';
+import match from 'services/api/match';
 
 class MatchContainer extends Component {
   constructor(props) {
@@ -68,10 +68,10 @@ class MatchContainer extends Component {
       this.props.history.push('/');
     } catch (e) {
       console.log('errorrrrrrrr');
+      this.setState(() => ({
+        submittingMatch: false
+      }));
     }
-    this.setState(() => ({
-      submittingMatch: false
-    }));
   }
 
   render() {
