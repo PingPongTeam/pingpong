@@ -105,12 +105,27 @@ match.get = function({ pgp, log, user }, { data, replyOK, replyFail }) {
     const userId2 = data.userId2 || userId1;
     const betweenUsers = userId1 !== userId2 ? true : false;
     log("Get matches of user " + userId1 + " and " + userId2);
+    const andOrThing = betweenUsers ? "AND" : "OR";
     pgp
       .query(
-        "SELECT id, player1_id, player1_score, player2_id, player2_score, end_date" +
-          " FROM match_results WHERE player1_id = $1" +
-          (betweenUsers ? "AND" : "OR") +
-          " player2_id = $2;",
+        `SELECT
+          m.id,
+          m.player1_id,
+          m.player1_score,
+          m.player2_id,
+          m.player2_score,
+          m.end_date,
+          u1.name AS player1_name,
+          u1.alias AS player1_alias,
+          u2.name AS player2_name,
+          u2.alias AS player2_alias
+         FROM
+          match_results AS m
+         INNER JOIN users AS u1
+          ON m.player1_id = u1.id
+         INNER JOIN users AS u2
+          ON m.player2_id = u2.id
+         WHERE m.player1_id = $1 ${andOrThing} m.player2_id = $2;`,
         [userId1, userId2]
       )
       .then(res => {
