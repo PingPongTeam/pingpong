@@ -333,7 +333,7 @@ describe("user:search", () => {
     );
   });
 
-  it("Match 10 existing users", done => {
+  it("Match 9 existing users", done => {
     socket.emit(
       "user:search",
       {
@@ -341,7 +341,7 @@ describe("user:search", () => {
       },
       result => {
         assert(result.status === 0, "Unexpected status");
-        assert(result.result.length === 10, "Unexpected number of matches");
+        assert(result.result.length === 9, "Unexpected number of matches");
         assert(result.result[0].userId >= 0, "Unexpected userId");
         assert(result.result[0].name, "Missing name");
         assert(result.result[0].email, "Missing name");

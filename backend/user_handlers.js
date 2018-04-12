@@ -339,16 +339,15 @@ function searchUserValidate(ctx, data) {
   return Promise.reject(errorArray);
 }
 
-function searchUser({ log, pgp }, { data, replyOK, replyFail }) {
-  log("test2: ");
+function searchUser({ user, log, pgp }, { data, replyOK, replyFail }) {
   pgp
     .query(
-      "SELECT id, alias, email, name" +
-        " FROM users WHERE email ILIKE $1 OR alias ILIKE $1;",
-      [data.aliasOrEmail + "%"]
+      `SELECT id, alias, email, name
+       FROM users WHERE NOT id = $1 AND
+       (email ILIKE $2 OR alias ILIKE $2);`,
+        [user.userId, data.aliasOrEmail + "%"]
     )
     .then(result => {
-      log("test1: " + JSON.stringify(result));
       const users = result.rows.map(row => {
         return {
           userId: row.id,
