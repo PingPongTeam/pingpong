@@ -27,95 +27,112 @@ const commandHandlers = [].concat(userHandlers, matchHandlers);
 log("Connecting to " + config.db.uri);
 const pgp = new Pool({ connectionString: config.db.uri });
 
-function replyErrorLog(
-  commandName,
-  requestData,
-  userContext,
-  socketReply,
-  errorArray
-) {
-  let shortError = errorArray
-    .map(r => "" + r.hint + " (" + r.error + ")")
-    .join(", ");
-  userContext.log(
-    "Error executing '" +
-      commandName +
-      "' (" +
-      JSON.stringify(requestData) +
-      "): " +
-      shortError
-  );
-  socketReply({ status: 1, errors: errorArray });
-}
-
-function executeCommand(userContext, command, data, socketReply) {
-  userContext.log("Incomming '" + command.name + "' request");
-
-  if (userContext.accessLevel.level < command.minAccessLevel.level) {
-    // Not allowed to execute this command
-    userContext.log("Not allowed to execute '" + command.name + "'");
-    socketReply({ status: 1, errors: [{ error: errorCode.notAllowed }] });
-    return;
-  }
-
-  command
-    .validate(userContext, data)
-    .then(function() {
-      // Parameters was valid - Execute the handler
-      userContext.log("'" + command.name + "' parameters was valid");
-      command.handler(userContext, {
-        data,
-        replyOK: reply => {
-          userContext.log("'" + command.name + "' was executed succesfully");
-          socketReply({ status: 0, result: reply });
-        },
-        replyFail: errorArray => {
-          replyErrorLog(
-            command.name,
-            data,
-            userContext,
-            socketReply,
-            errorArray
-          );
-        }
-      });
-    })
-    .catch(errorArray => {
-      replyErrorLog(command.name, data, userContext, socketReply, errorArray);
-    });
-}
-
 let connectionCounter = 0;
 
-io.on("connection", function onConnection(socket) {
-  connectionCounter++;
-  let userContext = {
-    accessLevel: AccessLevel.any,
-    socket: socket,
-    pgp: pgp
-  };
-  userContext.log = function(...args) {
-    const prefix =
+class User {
+  constructor() {
+    this.accessLevel = AccessLevel.any;
+    this.info = undefined;
+    this.auth = undefined;
+    this.connectionId = connectionCounter++;
+    this.updateLogPrefix();
+  }
+
+  log(...args) {
+    return log(this.logPrefix + args);
+  }
+
+  updateLogPrefix() {
+    this.logPrefix =
       "[" +
-      (userContext.user
-        ? userContext.user.email
-        : "unauthed " + connectionCounter) +
+      (this.info ? this.info.email : "unauthed " + this.connectionId) +
       " (" +
-      userContext.accessLevel.shortName +
-      ")]:";
-    return log(prefix + " " + args);
-  };
-  userContext.log("Connected from " + socket.request.connection.remoteAddress);
+      this.accessLevel.shortName +
+      ")]: ";
+  }
+
+  // Mark user as logged in
+  login(info, auth, accessLevel) {
+    this.log(
+      "signed in (as " +
+        info.email +
+        ", with access level '" +
+        accessLevel.name +
+        "')"
+    );
+    this.info = info;
+    this.accessLevel = accessLevel;
+    this.auth = auth;
+    this.updateLogPrefix();
+  }
+
+  // Logout user
+  logout() {
+    this.accessLevel = AccessLevel.any;
+    this.info = undefined;
+    this.auth = undefined;
+
+    this.log("logged out");
+    this.updateLogPrefix();
+  }
+
+  executeCommand(cmd, pgp, data, socketReply) {
+    const cmdLog = (...args) => {
+      return this.log("[" + cmd.name + "]: " + args);
+    };
+
+    if (this.accessLevel.level < cmd.minAccessLevel.level) {
+      // Not allowed to execute this command
+      cmdLog("Not allowed to execute");
+      socketReply({ status: 1, errors: [{ error: errorCode.notAllowed }] });
+      return;
+    }
+    const cmdContext = {
+      info: this.info,
+      pgp: pgp,
+      log: cmdLog,
+      auth: this.auth,
+      accessLevel: this.accessLevel,
+      login: (info, auth, accessLevel) => this.login(info, auth, accessLevel),
+      logout: () => this.logout()
+    };
+    cmd
+      .validate(cmdContext, data)
+      .then(() => {
+        // Parameters was valid - Execute the handler
+        cmdLog("Parameters was valid");
+        cmd.handler(cmdContext, {
+          data,
+          replyOK: reply => {
+            cmdLog("Was executed succesfully");
+            socketReply({ status: 0, result: reply });
+          },
+          replyFail: errorArray => {
+            cmdLog("Error executing: " + JSON.stringify(errorArray));
+            socketReply({ status: 1, errors: errorArray });
+          }
+        });
+      })
+      .catch(errorArray => {
+        cmdLog("Error executing: " + JSON.stringify(errorArray));
+        socketReply({ status: 1, errors: errorArray });
+      });
+  }
+}
+
+io.on("connection", socket => {
+  let user = new User();
+  user.log("Connected from " + socket.request.connection.remoteAddress);
 
   socket.on("disconnect", () => {
-    userContext.log("Disconnected");
+    user.log("Disconnected");
   });
 
   // Register command handlers
   for (let i = 0; i < commandHandlers.length; i++) {
-    let command = commandHandlers[i];
-    socket.on(command.name, (data, reply) => {
-      executeCommand(userContext, command, data, reply);
+    let cmd = commandHandlers[i];
+    socket.on(cmd.name, (data, reply) => {
+      user.executeCommand(cmd, pgp, data, reply);
     });
   }
 });

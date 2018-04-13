@@ -2,7 +2,7 @@ const errorCode = require("./error_code.js");
 const AccessLevel = require("./access_level.js");
 const match = {};
 
-match.create_validate = function({ user, accessLevel, pgp, log }, data) {
+match.create_validate = function(user, data) {
   function validatePlayerObj(hint, player, errorArray) {
     if (!player || !player.id || !(player.score >= 0)) {
       errorArray.push({ hint: hint, error: errorCode.invalidValue });
@@ -14,11 +14,11 @@ match.create_validate = function({ user, accessLevel, pgp, log }, data) {
   validatePlayerObj("player2", data.player2, errorArray);
   if (errorArray.length === 0) {
     if (
-      accessLevel == AccessLevel.user &&
-      user.userId !== data.player1.id &&
-      user.userId !== data.player2.id
+      user.accessLevel == AccessLevel.user &&
+      user.info.userId !== data.player1.id &&
+      user.info.userId !== data.player2.id
     ) {
-      log("A user can't create a match between two other players.");
+      user.log("A user can't create a match between two other players.");
       errorArray.push({ error: errorCode.invalidUser });
     }
   }
@@ -28,7 +28,8 @@ match.create_validate = function({ user, accessLevel, pgp, log }, data) {
   return Promise.resolve();
 };
 
-match.create = function({ pgp, log }, { data, replyOK, replyFail }) {
+match.create = function(user, { data, replyOK, replyFail }) {
+  const pgp = user.pgp;
   pgp.query(
     "INSERT into match_results " +
       "(player1_id, player1_score, player2_id, player2_score) " +
@@ -36,7 +37,7 @@ match.create = function({ pgp, log }, { data, replyOK, replyFail }) {
     [data.player1.id, data.player1.score, data.player2.id, data.player2.score],
     (err, result) => {
       if (err) {
-        log("unhandled db error: " + JSON.stringify(err));
+        user.log("unhandled db error: " + JSON.stringify(err));
         replyFail([{ error: errorCode.internal }]);
       } else {
         replyOK({ matchId: result.rows[0].id });
@@ -45,11 +46,12 @@ match.create = function({ pgp, log }, { data, replyOK, replyFail }) {
   );
 };
 
-match.get_validate = function({ pgp, log }, data) {
+match.get_validate = function(user, data) {
   return Promise.resolve();
 };
 
-match.get = function({ pgp, log, user }, { data, replyOK, replyFail }) {
+match.get = function(user, { data, replyOK, replyFail }) {
+  const pgp = user.pgp;
   function matchFromDbMatch(row) {
     return {
       matchId: row.id,
@@ -97,14 +99,14 @@ match.get = function({ pgp, log, user }, { data, replyOK, replyFail }) {
         replyOK({ matches: [match] });
       })
       .catch(err => {
-        log("db error (" + JSON.stringify(data) + "): " + err);
+        user.log("db error (" + JSON.stringify(data) + "): " + err);
         replyFail([{ error: errorCode.internal }]);
       });
   } else {
-    const userId1 = data.userId || data.userId1 || user.userId;
+    const userId1 = data.userId || data.userId1 || user.info.userId;
     const userId2 = data.userId2 || userId1;
     const betweenUsers = userId1 !== userId2 ? true : false;
-    log("Get matches of user " + userId1 + " and " + userId2);
+    user.log("Get matches of user " + userId1 + " and " + userId2);
     const andOrThing = betweenUsers ? "AND" : "OR";
     pgp
       .query(
@@ -132,13 +134,12 @@ match.get = function({ pgp, log, user }, { data, replyOK, replyFail }) {
         let matches = [];
         res.rows.forEach(row => {
           const match = matchFromDbMatch(row);
-          log(JSON.stringify(match));
           matches.push(match);
         });
         replyOK({ matches: matches });
       })
       .catch(err => {
-        log("db error (" + JSON.stringify(data) + "): " + err);
+        user.log("db error (" + JSON.stringify(data) + "): " + err);
         replyFail([{ error: errorCode.internal }]);
       });
   }

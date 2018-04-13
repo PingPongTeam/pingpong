@@ -75,23 +75,9 @@ function createUserValidate(ctx, data) {
   return Promise.resolve();
 }
 
-function markAuthed(userContext, user, auth) {
-  let accessLevel = AccessLevel.user;
-  userContext.log(
-    "signed in (as " +
-      user.email +
-      ", with access level '" +
-      accessLevel.name +
-      "')"
-  );
-  userContext.user = user;
-  userContext.auth = auth;
-  userContext.accessLevel = accessLevel;
-}
-
 // Create user'
-function createUser(userContext, { data, replyOK, replyFail }) {
-  let pgp = userContext.pgp;
+function createUser(user, { data, replyOK, replyFail }) {
+  let pgp = user.pgp;
   // Create a hashed password and insert user in db
   const passwdSalt = randomString(16);
   const passwdHash = sha512(data.password, passwdSalt);
@@ -108,7 +94,7 @@ function createUser(userContext, { data, replyOK, replyFail }) {
           (err, result) => {
             let errorArray = [];
             if (err) {
-              userContext.log("unhandled db error: " + JSON.stringify(err));
+              user.log("unhandled db error: " + JSON.stringify(err));
               errorArray.push({ error: errorCode.internal });
             } else {
               result.rows.forEach(row => {
@@ -130,59 +116,59 @@ function createUser(userContext, { data, replyOK, replyFail }) {
           }
         );
       } else if (err) {
-        userContext.log("unhandled db error: " + JSON.stringify(err));
+        user.log("unhandled db error: " + JSON.stringify(err));
         replyFail([{ error: errorCode.internal }]);
       } else {
         // User was created - Generate token and return
         let userId = result.rows[0].id;
-        newToken(userId, data.email).then(token => {
-          userContext.log("Created user " + data.alias + " (" + userId + ")");
-          replyOK({
-            userObject: {
-              userId: userId,
-              email: data.email,
-              alias: data.alias,
-              name: data.name
-            },
-            token: token
+        newToken(userId, data.email)
+          .then(token => {
+            user.log("Created user " + data.alias + " (" + userId + ")");
+            replyOK({
+              userObject: {
+                userId: userId,
+                email: data.email,
+                alias: data.alias,
+                name: data.name
+              },
+              token: token
+            });
+          })
+          .catch(err => {
+            user.log("Token error: " + err);
           });
-        });
       }
     }
   );
 }
 
-function removeUserValidate(userContext, data) {
+function removeUserValidate(user, data) {
   if (!data.password || !data.password.length) {
     Promise.reject([{ hint: "password", error: errorCode.missingValue }]);
   }
   return Promise.resolve();
 }
 
-function removeUser(userContext, { data, replyOK, replyFail }) {
+function removeUser(user, { data, replyOK, replyFail }) {
   // Remove the logged in user
-  let { log, auth, user, pgp } = userContext;
-  const incommingHash = sha512(data.password, userContext.auth.passwdSalt);
-  log(JSON.stringify(data));
-  log(JSON.stringify(auth));
-  log(incommingHash);
-  if (incommingHash !== auth.passwdHash) {
+  const pgp = user.pgp;
+  const incommingHash = sha512(data.password, user.auth.passwdSalt);
+  if (incommingHash !== user.auth.passwdHash) {
     replyFail([{ hint: "password", error: errorCode.invalidValue }]);
   } else {
     // Remove account and logout user
     pgp
-      .query("DELETE FROM users WHERE id = $1;", [userContext.userId])
+      .query("DELETE FROM users WHERE id = $1;", [user.info.userId])
       .then(res => {
-        log(JSON.stringify(res));
-        log("User account deleted");
-        _logoutUser(userContext);
+        user.log("User account deleted");
+        user.logout();
         replyOK({});
       });
   }
 }
 
 // Validate login:user parameters
-function loginUserValidate(ctx, data) {
+function loginUserValidate(user, data) {
   let errorArray = [];
   if (!data.token) {
     errorArray.push({ hint: "token", error: errorCode.missingValue });
@@ -202,13 +188,13 @@ function loginUserValidate(ctx, data) {
   return Promise.reject(errorArray);
 }
 
-function loginUser(userContext, { data, replyOK, replyFail }) {
-  let pgp = userContext.pgp;
+function loginUser(user, { data, replyOK, replyFail }) {
+  let pgp = user.pgp;
   if (data.token) {
     // Received token for authentication
     jwt.verify(data.token, config.jwt.secret, (err, decoded) => {
       if (err) {
-        userContext.log("Invalid token: " + JSON.stringify(err));
+        user.log("Invalid token: " + JSON.stringify(err));
         replyFail([{ hint: "token", error: errorCode.invalidToken }]);
       } else {
         // Ensure that user exists in db
@@ -223,30 +209,33 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
               replyFail([{ hint: "token", error: errorCode.invalidUser }]);
             } else {
               let row = res.rows[0];
-              const user = {
+              const userInfo = {
                 userId: row.id,
                 alias: row.alias,
                 email: row.email,
                 name: row.name
               };
-              const auth = {
+              const userAuth = {
                 token: data.token,
                 passwdHash: row.passwd_hash,
                 passwdSalt: row.passwd_salt
               };
               newToken(row.id, row.email)
                 .then(token => {
-                  markAuthed(userContext, user, auth);
+                  user.login(userInfo, userAuth, AccessLevel.user);
                   replyOK({
-                    userObject: user,
+                    userObject: userInfo,
                     token: data.token
                   });
                 })
                 .catch(err => {
-                  userContext.log("Error creating token: " + err);
+                  user.log("Token error: " + err);
                   replyFail([{ error: errorCode.internal }]);
                 });
             }
+          })
+          .catch(err => {
+            user.log("db error (" + JSON.stringify(data) + "): " + err);
           });
       }
     });
@@ -265,27 +254,31 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
           const incomming = sha512(data.password, row.passwd_salt);
           if (incomming === row.passwd_hash) {
             // Return a new token to the verified user
-            newToken(row.id, row.email).then(token => {
-              // Mark user as authed and signed in
-              const user = {
-                userId: row.id,
-                alias: row.alias,
-                email: row.email,
-                name: row.name
-              };
-              const auth = {
-                token: token,
-                passwsHash: row.passwd_hash,
-                passwdSalt: row.passwd_salt
-              };
-              markAuthed(userContext, user, auth);
-              replyOK({
-                userObject: user,
-                token: token
+            newToken(row.id, row.email)
+              .then(token => {
+                // Mark user as authed and signed in
+                const userInfo = {
+                  userId: row.id,
+                  alias: row.alias,
+                  email: row.email,
+                  name: row.name
+                };
+                const userAuth = {
+                  token: token,
+                  passwsHash: row.passwd_hash,
+                  passwdSalt: row.passwd_salt
+                };
+                user.login(userInfo, userAuth, AccessLevel.user);
+                replyOK({
+                  userObject: userInfo,
+                  token: token
+                });
+              })
+              .catch(err => {
+                user.log("T!oken error: " + err);
               });
-            });
           } else {
-            userContext.log("Invalid password for user: " + data.auth);
+            user.log("Invalid password for user: " + data.auth);
             replyFail([{ hint: "auth", error: errorCode.invalidUser }]);
           }
         } else if (res.rowCount === 0) {
@@ -293,33 +286,26 @@ function loginUser(userContext, { data, replyOK, replyFail }) {
           replyFail([{ hint: "auth", error: errorCode.invalidUser }]);
         } else {
           // DB returned multiple columns (shouldn't occur)!?
-          userContext.log(
+          user.log(
             "Multiple matches on auth (" + data.auth + "): " + res.rowCount
           );
           replyFail([{ hint: "auth", error: errorCode.internal }]);
         }
       })
       .catch(err => {
-        userContext.log("db error (" + JSON.stringify(data) + "): " + err);
+        user.log("db error (" + JSON.stringify(data) + "): " + err);
         replyFail([{ hint: "auth", error: errorCode.internal }]);
       });
   }
 }
 
-function logoutUserValidate({}, data) {
+function logoutUserValidate(user, data) {
   return Promise.resolve();
 }
 
-function _logoutUser(userContext) {
-  userContext.log("logged out");
-  userContext.accessLevel = AccessLevel.any;
-  userContext.user = undefined;
-  userContext.auth = undefined;
-}
-
-function logoutUser(userContext, { data, replyOK, replyFail }) {
-  if (userContext.accessLevel) {
-    _logoutUser(userContext);
+function logoutUser(user, { data, replyOK, replyFail }) {
+  if (user.accessLevel) {
+    user.logout();
   }
   replyOK({});
 }
@@ -339,13 +325,14 @@ function searchUserValidate(ctx, data) {
   return Promise.reject(errorArray);
 }
 
-function searchUser({ user, log, pgp }, { data, replyOK, replyFail }) {
+function searchUser(user, { data, replyOK, replyFail }) {
+  const pgp = user.pgp;
   pgp
     .query(
       `SELECT id, alias, email, name
        FROM users WHERE NOT id = $1 AND
        (email ILIKE $2 OR alias ILIKE $2);`,
-        [user.userId, data.aliasOrEmail + "%"]
+      [user.info.userId, data.aliasOrEmail + "%"]
     )
     .then(result => {
       const users = result.rows.map(row => {
@@ -359,7 +346,7 @@ function searchUser({ user, log, pgp }, { data, replyOK, replyFail }) {
       replyOK(users);
     })
     .catch(err => {
-      log("Error searching for user: " + err);
+      user.log("Error searching for user: " + err);
       replyFail([{ error: errorCode.internal }]);
     });
 }
