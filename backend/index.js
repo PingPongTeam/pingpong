@@ -22,10 +22,45 @@ const matchHandlers = require("./match_handlers.js");
 */
 
 const log = common.log;
-const commandHandlers = [].concat(userHandlers, matchHandlers);
+const commandHandlers = [].concat(
+  userHandlers.commands,
+  matchHandlers.commands
+);
+const eventHandlers = Object.assign(matchHandlers.events);
 
 log("Connecting to " + config.db.uri);
 const pgp = new Pool({ connectionString: config.db.uri });
+
+// Setup a postgres notification listener
+pgp.connect((err, client, release) => {
+  if (err) {
+    console.log(err);
+    log("Failed to connect to db: " + err);
+  } else {
+    client.on("notification", function(msg) {
+      // Called on new post in any watched table
+      let [table, col, id] = msg.payload.split(",");
+      if (eventHandlers[table]) {
+        // We have an event handler which matches with the table name
+        let evh = eventHandlers[table];
+        const eventContext = {
+          id: id,
+          pgp: pgp,
+          log: (...args) => {
+            log("[" + evh.name + "]: " + args);
+          },
+          userFromUserId: userFromUserId
+        };
+        evh.handler(eventContext);
+      }
+    });
+    client.query("LISTEN watchers").then(res => {
+      log("Now connected to db and listening for notifications");
+    });
+  }
+});
+
+const userFromUserId = {};
 
 let connectionCounter = 0;
 
@@ -45,8 +80,9 @@ class User {
   updateLogPrefix() {
     this.logPrefix =
       "[" +
-      (this.info ? this.info.email : "unauthed " + this.connectionId) +
-      " (" +
+      (this.info
+        ? this.info.email + " (id: " + this.info.userId + ", "
+        : "unauthed (") +
       this.accessLevel.shortName +
       ")]: ";
   }
@@ -64,15 +100,22 @@ class User {
     this.accessLevel = accessLevel;
     this.auth = auth;
     this.updateLogPrefix();
+
+    // Add user to lookup table so that we can go from
+    // user id -> a User object.
+    userFromUserId[this.info.userId] = this;
   }
 
   // Logout user
   logout() {
+    if (this.info && userFromUserId[this.info.userId]) {
+      userFromUserId[this.info.userId] = undefined;
+    }
     this.accessLevel = AccessLevel.any;
     this.info = undefined;
     this.auth = undefined;
 
-    this.log("logged out");
+    this.log("signed out");
     this.updateLogPrefix();
   }
 
@@ -125,6 +168,7 @@ io.on("connection", socket => {
   user.log("Connected from " + socket.request.connection.remoteAddress);
 
   socket.on("disconnect", () => {
+    user.logout();
     user.log("Disconnected");
   });
 

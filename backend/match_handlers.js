@@ -145,24 +145,64 @@ match.get = function(user, { data, replyOK, replyFail }) {
   }
 };
 
-const handlers = [
-  {
-    // A user can create match between self and other player.
-    // Admin can create match between anyone.
-    name: "match:create",
-    minAccessLevel: AccessLevel.user,
-    validate: match.create_validate,
-    handler: match.create
-  },
-  {
-    // Without extra parametes all matches for the current user is returned.
-    // Provide userId to get maches for another user.
-    // Provide matchId to get specific match.
-    name: "match:get",
-    minAccessLevel: AccessLevel.user,
-    validate: match.get_validate,
-    handler: match.get
-  }
-];
+function newMatchEvent(eventContext) {
+  let matchId = eventContext.id;
+  let pgp = eventContext.pgp;
+  let log = eventContext.log;
+  let userFromUserId = eventContext.userFromUserId;
+  // Query db to get which users are referenced
+  pgp
+    .query(`SELECT player1_id, player2_id FROM match_result WHERE id = $1;`, [
+      matchId
+    ])
+    .then(res => {
+      if (res.rows.length === 1) {
+        const uid1 = res.rows[0].player1_id;
+        const uid2 = res.rows[0].player2_id;
+        log(
+          "New match (id: " +
+            matchId +
+            ", between " +
+            uid1 +
+            " and " +
+            uid2 +
+            ")"
+        );
+        if (userFromUserId[uid1]) {
+          userFromUserId[uid1].log("Notify about new match");
+        }
+        if (userFromUserId[uid2]) {
+          userFromUserId[uid2].log("Notify about new match");
+        }
+      }
+    })
+    .catch(err => {
+      log("db error: " + JSON.stringify(err));
+    });
+}
+
+const handlers = {
+  events: { match_result: { name: "match:event:new", handler: newMatchEvent } },
+
+  commands: [
+    {
+      // A user can create match between self and other player.
+      // Admin can create match between anyone.
+      name: "match:create",
+      minAccessLevel: AccessLevel.user,
+      validate: match.create_validate,
+      handler: match.create
+    },
+    {
+      // Without extra parametes all matches for the current user is returned.
+      // Provide userId to get maches for another user.
+      // Provide matchId to get specific match.
+      name: "match:get",
+      minAccessLevel: AccessLevel.user,
+      validate: match.get_validate,
+      handler: match.get
+    }
+  ]
+};
 
 module.exports = handlers;

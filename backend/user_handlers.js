@@ -351,37 +351,39 @@ function searchUser(user, { data, replyOK, replyFail }) {
     });
 }
 
-const handlers = [
-  {
-    name: "user:create",
-    minAccessLevel: AccessLevel.any,
-    validate: createUserValidate,
-    handler: createUser
-  },
-  {
-    name: "user:remove",
-    minAccessLevel: AccessLevel.user,
-    validate: removeUserValidate,
-    handler: removeUser
-  },
-  {
-    name: "user:login",
-    minAccessLevel: AccessLevel.any,
-    validate: loginUserValidate,
-    handler: loginUser
-  },
-  {
-    name: "user:logout",
-    minAccessLevel: AccessLevel.any,
-    validate: logoutUserValidate,
-    handler: logoutUser
-  },
-  {
-    name: "user:search",
-    minAccessLevel: AccessLevel.user,
-    validate: searchUserValidate,
-    handler: searchUser
-  }
-];
+const handlers = {
+  commands: [
+    {
+      name: "user:create",
+      minAccessLevel: AccessLevel.any,
+      validate: createUserValidate,
+      handler: createUser
+    },
+    {
+      name: "user:remove",
+      minAccessLevel: AccessLevel.user,
+      validate: removeUserValidate,
+      handler: removeUser
+    },
+    {
+      name: "user:login",
+      minAccessLevel: AccessLevel.any,
+      validate: loginUserValidate,
+      handler: loginUser
+    },
+    {
+      name: "user:logout",
+      minAccessLevel: AccessLevel.any,
+      validate: logoutUserValidate,
+      handler: logoutUser
+    },
+    {
+      name: "user:search",
+      minAccessLevel: AccessLevel.user,
+      validate: searchUserValidate,
+      handler: searchUser
+    }
+  ]
+};
 
 module.exports = handlers;
