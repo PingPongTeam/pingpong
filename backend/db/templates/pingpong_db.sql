@@ -43,6 +43,23 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
 
 
+--
+-- Name: notify_trigger(); Type: FUNCTION; Schema: public; Owner: pingpong
+--
+
+CREATE FUNCTION public.notify_trigger() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+BEGIN
+  PERFORM pg_notify('watchers', TG_TABLE_NAME || ',id,' || NEW.id );
+  RETURN new;
+END;
+$$;
+
+
+ALTER FUNCTION public.notify_trigger() OWNER TO pingpong;
+
 SET default_tablespace = '';
 
 SET default_with_oids = false;
@@ -168,6 +185,20 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users watched_table_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER watched_table_trigger AFTER INSERT ON public.users FOR EACH ROW EXECUTE PROCEDURE public.notify_trigger();
+
+
+--
+-- Name: match_result watched_table_trigger; Type: TRIGGER; Schema: public; Owner: pingpong
+--
+
+CREATE TRIGGER watched_table_trigger AFTER INSERT ON public.match_result FOR EACH ROW EXECUTE PROCEDURE public.notify_trigger();
 
 
 --
