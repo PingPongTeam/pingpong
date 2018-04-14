@@ -31,7 +31,7 @@ match.create_validate = function(user, data) {
 match.create = function(user, { data, replyOK, replyFail }) {
   const pgp = user.pgp;
   pgp.query(
-    "INSERT into match_results " +
+    "INSERT into match_result " +
       "(player1_id, player1_score, player2_id, player2_score) " +
       "VALUES ($1, $2, $3, $4) RETURNING id;",
     [data.player1.id, data.player1.score, data.player2.id, data.player2.score],
@@ -86,7 +86,7 @@ match.get = function(user, { data, replyOK, replyFail }) {
           u2.name AS player2_name,
           u2.alias AS player2_alias
          FROM
-          match_results AS m
+          match_result AS m
          INNER JOIN users AS u1
           ON m.player1_id = u1.id
          INNER JOIN users AS u2
@@ -122,7 +122,7 @@ match.get = function(user, { data, replyOK, replyFail }) {
           u2.name AS player2_name,
           u2.alias AS player2_alias
          FROM
-          match_results AS m
+          match_result AS m
          INNER JOIN users AS u1
           ON m.player1_id = u1.id
          INNER JOIN users AS u2
