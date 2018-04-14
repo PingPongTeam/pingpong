@@ -65,7 +65,8 @@ const userFromUserId = {};
 let connectionCounter = 0;
 
 class User {
-  constructor() {
+  constructor(socket) {
+    this.socket = socket;
     this.accessLevel = AccessLevel.any;
     this.info = undefined;
     this.auth = undefined;
@@ -104,6 +105,14 @@ class User {
     // Add user to lookup table so that we can go from
     // user id -> a User object.
     userFromUserId[this.info.userId] = this;
+  }
+
+  emit(channel, msg, callback) {
+    if (this.socket) {
+      return this.socket.emit(channel, msg, callback);
+    } else {
+      this.log("No socket defined!?");
+    }
   }
 
   // Logout user
@@ -164,12 +173,13 @@ class User {
 }
 
 io.on("connection", socket => {
-  let user = new User();
+  let user = new User(socket);
   user.log("Connected from " + socket.request.connection.remoteAddress);
 
   socket.on("disconnect", () => {
     user.logout();
     user.log("Disconnected");
+    user.socket = undefined;
   });
 
   // Register command handlers

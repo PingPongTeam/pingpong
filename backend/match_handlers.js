@@ -50,8 +50,23 @@ match.get_validate = function(user, data) {
   return Promise.resolve();
 };
 
-match.get = function(user, { data, replyOK, replyFail }) {
-  const pgp = user.pgp;
+function getMatches(pgp, { userId1, userId2, matchId }) {
+  let variables = [];
+  let whereStatement = "";
+  if (matchId) {
+    variables.push(matchId);
+    whereStatement = "WHERE m.id = $1;";
+  } else if (userId1 && userId2) {
+    const betweenUsers = userId1 !== userId2 ? true : false;
+    whereStatement = `WHERE (m.player1_id = $1 AND m.player2_id = $2)
+                      OR (m.player1_id = $2 AND m.player2_id = $1);`;
+    variables.push(userId1);
+    variables.push(userId2);
+  } else if (userId1) {
+    whereStatement = "WHERE (m.player1_id = $1 OR m.player2_id = $1)";
+    variables.push(userId1);
+  }
+
   function matchFromDbMatch(row) {
     return {
       matchId: row.id,
@@ -71,10 +86,9 @@ match.get = function(user, { data, replyOK, replyFail }) {
     };
   }
 
-  if (data.matchId) {
-    pgp
-      .query(
-        `SELECT
+  return pgp
+    .query(
+      `SELECT
           m.id,
           m.player1_id,
           m.player1_score,
@@ -91,12 +105,22 @@ match.get = function(user, { data, replyOK, replyFail }) {
           ON m.player1_id = u1.id
          INNER JOIN users AS u2
           ON m.player2_id = u2.id
-         WHERE m.id = $1;`,
-        [data.matchId]
-      )
-      .then(res => {
-        const match = matchFromDbMatch(res.rows[0]);
-        replyOK({ matches: [match] });
+         ${whereStatement};`,
+      variables
+    )
+    .then(res => {
+      let matchArray = res.rows.map(row => matchFromDbMatch(row));
+      return Promise.resolve(matchArray);
+    });
+}
+
+match.get = function(user, { data, replyOK, replyFail }) {
+  const pgp = user.pgp;
+
+  if (data.matchId) {
+    getMatches(pgp, { matchId: data.matchId })
+      .then(matches => {
+        replyOK({ matches: matches });
       })
       .catch(err => {
         user.log("db error (" + JSON.stringify(data) + "): " + err);
@@ -104,38 +128,8 @@ match.get = function(user, { data, replyOK, replyFail }) {
       });
   } else {
     const userId1 = data.userId || data.userId1 || user.info.userId;
-    const userId2 = data.userId2 || userId1;
-    const betweenUsers = userId1 !== userId2 ? true : false;
-    user.log("Get matches of user " + userId1 + " and " + userId2);
-    const andOrThing = betweenUsers ? "AND" : "OR";
-    pgp
-      .query(
-        `SELECT
-          m.id,
-          m.player1_id,
-          m.player1_score,
-          m.player2_id,
-          m.player2_score,
-          m.end_date,
-          u1.name AS player1_name,
-          u1.alias AS player1_alias,
-          u2.name AS player2_name,
-          u2.alias AS player2_alias
-         FROM
-          match_result AS m
-         INNER JOIN users AS u1
-          ON m.player1_id = u1.id
-         INNER JOIN users AS u2
-          ON m.player2_id = u2.id
-         WHERE m.player1_id = $1 ${andOrThing} m.player2_id = $2;`,
-        [userId1, userId2]
-      )
-      .then(res => {
-        let matches = [];
-        res.rows.forEach(row => {
-          const match = matchFromDbMatch(row);
-          matches.push(match);
-        });
+    getMatches(pgp, { userId1: userId1, userId2: data.userId2 })
+      .then(matches => {
         replyOK({ matches: matches });
       })
       .catch(err => {
@@ -145,44 +139,42 @@ match.get = function(user, { data, replyOK, replyFail }) {
   }
 };
 
-function newMatchEvent(eventContext) {
+match.created = eventContext => {
   let matchId = eventContext.id;
   let pgp = eventContext.pgp;
   let log = eventContext.log;
   let userFromUserId = eventContext.userFromUserId;
+
   // Query db to get which users are referenced
-  pgp
-    .query(`SELECT player1_id, player2_id FROM match_result WHERE id = $1;`, [
-      matchId
-    ])
-    .then(res => {
-      if (res.rows.length === 1) {
-        const uid1 = res.rows[0].player1_id;
-        const uid2 = res.rows[0].player2_id;
+  getMatches(pgp, { matchId: matchId })
+    .then(matches => {
+      if (matches.length >= 1) {
+        const pid1 = matches[0].player1.id;
+        const pid2 = matches[0].player2.id;
         log(
           "New match (id: " +
             matchId +
             ", between " +
-            uid1 +
+            pid1 +
             " and " +
-            uid2 +
+            pid2 +
             ")"
         );
-        if (userFromUserId[uid1]) {
-          userFromUserId[uid1].log("Notify about new match");
-        }
-        if (userFromUserId[uid2]) {
-          userFromUserId[uid2].log("Notify about new match");
-        }
+        [userFromUserId[pid1], userFromUserId[pid2]].forEach(user => {
+          if (user) {
+            user.log("Notify about new match");
+            user.emit("match:created", matches[0]);
+          }
+        });
       }
     })
     .catch(err => {
       log("db error: " + JSON.stringify(err));
     });
-}
+};
 
 const handlers = {
-  events: { match_result: { name: "match:event:new", handler: newMatchEvent } },
+  events: { match_result: { name: "match:created", handler: match.created } },
 
   commands: [
     {

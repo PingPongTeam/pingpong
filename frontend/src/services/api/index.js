@@ -24,3 +24,8 @@ socket.on('user:token', message => {
     window.localStorage.setItem('jwt', message.newToken);
   }
 });
+
+socket.on('match:created', message => {
+    // TODO: Implement
+    console.log("Do something useful with this: " + JSON.stringify(message));
+});
