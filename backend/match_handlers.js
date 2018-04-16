@@ -1,17 +1,10 @@
+const validation = require("./validation.js");
 const errorCode = require("./error_code.js");
 const AccessLevel = require("./access_level.js");
 const match = {};
 
 match.create_validate = function(user, data) {
-  function validatePlayerObj(hint, player, errorArray) {
-    if (!player || !player.id || !(player.score >= 0)) {
-      errorArray.push({ hint: hint, error: errorCode.invalidValue });
-    }
-  }
-
-  let errorArray = [];
-  validatePlayerObj("player1", data.player1, errorArray);
-  validatePlayerObj("player2", data.player2, errorArray);
+  let errorArray = validation.validate(data, "/MatchCreate");
   if (errorArray.length === 0) {
     if (
       user.accessLevel == AccessLevel.user &&
@@ -22,10 +15,7 @@ match.create_validate = function(user, data) {
       errorArray.push({ error: errorCode.invalidUser });
     }
   }
-  if (errorArray.length > 0) {
-    return Promise.reject(errorArray);
-  }
-  return Promise.resolve();
+  return errorArray;
 };
 
 match.create = function(user, { data, replyOK, replyFail }) {
@@ -47,7 +37,7 @@ match.create = function(user, { data, replyOK, replyFail }) {
 };
 
 match.get_validate = function(user, data) {
-  return Promise.resolve();
+  return validation.validate(data, "/MatchGet");
 };
 
 function getMatches(pgp, { userId1, userId2, matchId }) {

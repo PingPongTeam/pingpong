@@ -4,9 +4,9 @@ const common = require("./common.js");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const hash = crypto.createHash("sha256");
-const validator = require("validator");
 const dbHelpers = require("./db_helpers.js");
 const errorCode = require("./error_code.js");
+const validation = require("./validation.js");
 
 function newToken(userId, email, expirationTime) {
   return new Promise(function(fulfill, reject) {
@@ -39,40 +39,9 @@ function sha512(password, salt) {
   return hash.digest("hex");
 }
 
-const aliasOrEmailRegex = new RegExp("^[a-zA-Z0-9_@.-]*$", "i");
-const aliasRegex = new RegExp("^[a-zA-Z0-9]+([_-]?[a-zA-Z0-9])*$", "i");
-function validateAlias(alias) {
-  return aliasRegex.test(alias);
-}
-
-function validateEmail(email) {
-  return validator.isEmail(email);
-}
-function validateName(name) {
-  // TODO
-  return name && name.length && name.length > 0;
-}
-
 // Validate create:user parameters
 function createUserValidate(ctx, data) {
-  let errorArray = [];
-
-  if (!validateAlias(data.alias)) {
-    errorArray.push({ hint: "alias", error: errorCode.invalidValue });
-  }
-  if (!validateEmail(data.email)) {
-    errorArray.push({ hint: "email", error: errorCode.invalidValue });
-  }
-  if (!validateName(data.name)) {
-    errorArray.push({ hint: "name", error: errorCode.invalidValue });
-  }
-  if (!data.password || data.password.length < 2) {
-    errorArray.push({ hint: "password", error: errorCode.invalidValue });
-  }
-  if (errorArray.length > 0) {
-    return Promise.reject(errorArray);
-  }
-  return Promise.resolve();
+  return validation.validate(data, "/UserCreate");
 }
 
 // Create user'
@@ -143,10 +112,7 @@ function createUser(user, { data, replyOK, replyFail }) {
 }
 
 function removeUserValidate(user, data) {
-  if (!data.password || !data.password.length) {
-    Promise.reject([{ hint: "password", error: errorCode.missingValue }]);
-  }
-  return Promise.resolve();
+  return validation.validate(data.password, "/Password", { hint: "password" });
 }
 
 function removeUser(user, { data, replyOK, replyFail }) {
@@ -169,23 +135,11 @@ function removeUser(user, { data, replyOK, replyFail }) {
 
 // Validate login:user parameters
 function loginUserValidate(user, data) {
-  let errorArray = [];
-  if (!data.token) {
-    errorArray.push({ hint: "token", error: errorCode.missingValue });
+  if (data.token) {
+    return validation.validate(data, "/UserLoginToken");
   } else {
-    return Promise.resolve();
+    return validation.validate(data, "/UserLoginAuth");
   }
-  if (!data.password || !data.auth) {
-    if (!data.password) {
-      errorArray.push({ hint: "password", error: errorCode.missingValue });
-    }
-    if (!data.auth) {
-      errorArray.push({ hint: "auth", error: errorCode.missingValue });
-    }
-  } else {
-    return Promise.resolve();
-  }
-  return Promise.reject(errorArray);
 }
 
 function loginUser(user, { data, replyOK, replyFail }) {
@@ -300,7 +254,7 @@ function loginUser(user, { data, replyOK, replyFail }) {
 }
 
 function logoutUserValidate(user, data) {
-  return Promise.resolve();
+  return [];
 }
 
 function logoutUser(user, { data, replyOK, replyFail }) {
@@ -311,18 +265,7 @@ function logoutUser(user, { data, replyOK, replyFail }) {
 }
 
 function searchUserValidate(ctx, data) {
-  let errorArray = [];
-  if (!data.aliasOrEmail) {
-    errorArray.push({ hint: "aliasOrEmail", error: errorCode.missingValue });
-  } else if (
-    data.aliasOrEmail.lenght < 2 ||
-    !aliasOrEmailRegex.test(data.aliasOrEmail)
-  ) {
-    errorArray.push({ hint: "aliasOrEmail", error: errorCode.invalidValue });
-  } else {
-    return Promise.resolve();
-  }
-  return Promise.reject(errorArray);
+  return validation.validate(data, "/SearchUser");
 }
 
 function searchUser(user, { data, replyOK, replyFail }) {

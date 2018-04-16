@@ -55,6 +55,21 @@ describe("user:create/user:remove", () => {
       done();
     });
   });
+  it("invalid format", done => {
+    socket.emit(
+      "user:create",
+      {
+        alias: 1,
+        name: "N",
+        password: "StupidPassword"
+      },
+      result => {
+        assert(result.status === 1, "Unexpected status");
+        done();
+      }
+    );
+  });
+
   it("existing alias", done => {
     socket.emit(
       "user:create",

@@ -148,27 +148,26 @@ class User {
       login: (info, auth, accessLevel) => this.login(info, auth, accessLevel),
       logout: () => this.logout()
     };
-    cmd
-      .validate(cmdContext, data)
-      .then(() => {
-        // Parameters was valid - Execute the handler
-        cmdLog("Parameters was valid");
-        cmd.handler(cmdContext, {
-          data,
-          replyOK: reply => {
-            cmdLog("Was executed succesfully");
-            socketReply({ status: 0, result: reply });
-          },
-          replyFail: errorArray => {
-            cmdLog("Error executing: " + JSON.stringify(errorArray));
-            socketReply({ status: 1, errors: errorArray });
-          }
-        });
-      })
-      .catch(errorArray => {
-        cmdLog("Error executing: " + JSON.stringify(errorArray));
-        socketReply({ status: 1, errors: errorArray });
+
+    const validationErrorArray = cmd.validate(cmdContext, data);
+    if (validationErrorArray.length > 0) {
+      cmdLog("Error executing: " + JSON.stringify(validationErrorArray));
+      socketReply({ status: 1, errors: validationErrorArray });
+    } else {
+      // Parameters was valid - Execute the handler
+      cmdLog("Parameters was valid");
+      cmd.handler(cmdContext, {
+        data,
+        replyOK: reply => {
+          cmdLog("Was executed succesfully");
+          socketReply({ status: 0, result: reply });
+        },
+        replyFail: errorArray => {
+          cmdLog("Error executing: " + JSON.stringify(errorArray));
+          socketReply({ status: 1, errors: errorArray });
+        }
       });
+    }
   }
 }
 
