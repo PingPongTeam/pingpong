@@ -22,100 +22,170 @@ const matchHandlers = require("./match_handlers.js");
 */
 
 const log = common.log;
-const commandHandlers = [].concat(userHandlers, matchHandlers);
+const commandHandlers = [].concat(
+  userHandlers.commands,
+  matchHandlers.commands
+);
+const eventHandlers = Object.assign(matchHandlers.events);
 
 log("Connecting to " + config.db.uri);
 const pgp = new Pool({ connectionString: config.db.uri });
 
-function replyErrorLog(
-  commandName,
-  requestData,
-  userContext,
-  socketReply,
-  errorArray
-) {
-  let shortError = errorArray
-    .map(r => "" + r.hint + " (" + r.error + ")")
-    .join(", ");
-  userContext.log(
-    "Error executing '" +
-      commandName +
-      "' (" +
-      JSON.stringify(requestData) +
-      "): " +
-      shortError
-  );
-  socketReply({ status: 1, errors: errorArray });
-}
-
-function executeCommand(userContext, command, data, socketReply) {
-  userContext.log("Incomming '" + command.name + "' request");
-
-  if (userContext.accessLevel.level < command.minAccessLevel.level) {
-    // Not allowed to execute this command
-    userContext.log("Not allowed to execute '" + command.name + "'");
-    socketReply({ status: 1, errors: [{ error: errorCode.notAllowed }] });
-    return;
-  }
-
-  command
-    .validate(userContext, data)
-    .then(function() {
-      // Parameters was valid - Execute the handler
-      userContext.log("'" + command.name + "' parameters was valid");
-      command.handler(userContext, {
-        data,
-        replyOK: reply => {
-          userContext.log("'" + command.name + "' was executed succesfully");
-          socketReply({ status: 0, result: reply });
-        },
-        replyFail: errorArray => {
-          replyErrorLog(
-            command.name,
-            data,
-            userContext,
-            socketReply,
-            errorArray
-          );
-        }
-      });
-    })
-    .catch(errorArray => {
-      replyErrorLog(command.name, data, userContext, socketReply, errorArray);
+// Setup a postgres notification listener
+pgp.connect((err, client, release) => {
+  if (err) {
+    console.log(err);
+    log("Failed to connect to db: " + err);
+  } else {
+    client.on("notification", function(msg) {
+      // Called on new post in any watched table
+      let [table, col, id] = msg.payload.split(",");
+      if (eventHandlers[table]) {
+        // We have an event handler which matches with the table name
+        let evh = eventHandlers[table];
+        const eventContext = {
+          id: id,
+          pgp: pgp,
+          log: (...args) => {
+            log("[" + evh.name + "]: " + args);
+          },
+          userFromUserId: userFromUserId
+        };
+        evh.handler(eventContext);
+      }
     });
-}
+    client.query("LISTEN watchers").then(res => {
+      log("Now connected to db and listening for notifications");
+    });
+  }
+});
+
+const userFromUserId = {};
 
 let connectionCounter = 0;
 
-io.on("connection", function onConnection(socket) {
-  connectionCounter++;
-  let userContext = {
-    accessLevel: AccessLevel.any,
-    socket: socket,
-    pgp: pgp
-  };
-  userContext.log = function(...args) {
-    const prefix =
+class User {
+  constructor(socket) {
+    this.socket = socket;
+    this.accessLevel = AccessLevel.any;
+    this.info = undefined;
+    this.auth = undefined;
+    this.connectionId = connectionCounter++;
+    this.updateLogPrefix();
+  }
+
+  log(...args) {
+    return log(this.logPrefix + args);
+  }
+
+  updateLogPrefix() {
+    this.logPrefix =
       "[" +
-      (userContext.user
-        ? userContext.user.email
-        : "unauthed " + connectionCounter) +
-      " (" +
-      userContext.accessLevel.shortName +
-      ")]:";
-    return log(prefix + " " + args);
-  };
-  userContext.log("Connected from " + socket.request.connection.remoteAddress);
+      (this.info
+        ? this.info.email + " (id: " + this.info.userId + ", "
+        : "unauthed (") +
+      this.accessLevel.shortName +
+      ")]: ";
+  }
+
+  // Mark user as logged in
+  login(info, auth, accessLevel) {
+    this.log(
+      "signed in (as " +
+        info.email +
+        ", with access level '" +
+        accessLevel.name +
+        "')"
+    );
+    this.info = info;
+    this.accessLevel = accessLevel;
+    this.auth = auth;
+    this.updateLogPrefix();
+
+    // Add user to lookup table so that we can go from
+    // user id -> a User object.
+    userFromUserId[this.info.userId] = this;
+  }
+
+  emit(channel, msg, callback) {
+    if (this.socket) {
+      return this.socket.emit(channel, msg, callback);
+    } else {
+      this.log("No socket defined!?");
+    }
+  }
+
+  // Logout user
+  logout() {
+    if (this.info && userFromUserId[this.info.userId]) {
+      userFromUserId[this.info.userId] = undefined;
+    }
+    this.accessLevel = AccessLevel.any;
+    this.info = undefined;
+    this.auth = undefined;
+
+    this.log("signed out");
+    this.updateLogPrefix();
+  }
+
+  executeCommand(cmd, pgp, data, socketReply) {
+    const cmdLog = (...args) => {
+      return this.log("[" + cmd.name + "]: " + args);
+    };
+
+    if (this.accessLevel.level < cmd.minAccessLevel.level) {
+      // Not allowed to execute this command
+      cmdLog("Not allowed to execute");
+      socketReply({ status: 1, errors: [{ error: errorCode.notAllowed }] });
+      return;
+    }
+    const cmdContext = {
+      info: this.info,
+      pgp: pgp,
+      log: cmdLog,
+      auth: this.auth,
+      accessLevel: this.accessLevel,
+      login: (info, auth, accessLevel) => this.login(info, auth, accessLevel),
+      logout: () => this.logout()
+    };
+
+    const validationErrorArray = cmd.validate(cmdContext, data);
+    if (validationErrorArray.length > 0) {
+      cmdLog("Error executing: " + JSON.stringify(validationErrorArray));
+      socketReply({ status: 1, errors: validationErrorArray });
+    } else {
+      // Parameters was valid - Execute the handler
+      cmdLog("Parameters was valid");
+      cmd.handler(cmdContext, {
+        data,
+        replyOK: reply => {
+          cmdLog("Was executed succesfully");
+          socketReply({ status: 0, result: reply });
+        },
+        replyFail: errorArray => {
+          cmdLog("Error executing: " + JSON.stringify(errorArray));
+          socketReply({ status: 1, errors: errorArray });
+        }
+      });
+    }
+  }
+}
+
+io.on("connection", socket => {
+  let user = new User(socket);
+  user.log("Connected from " + socket.request.connection.remoteAddress);
 
   socket.on("disconnect", () => {
-    userContext.log("Disconnected");
+    user.logout();
+    user.log("Disconnected");
+    user.socket = undefined;
   });
 
   // Register command handlers
   for (let i = 0; i < commandHandlers.length; i++) {
-    let command = commandHandlers[i];
-    socket.on(command.name, (data, reply) => {
-      executeCommand(userContext, command, data, reply);
+    let cmd = commandHandlers[i];
+    socket.on(cmd.name, (data, reply) => {
+      user.executeCommand(cmd, pgp, data, reply);
     });
   }
 });

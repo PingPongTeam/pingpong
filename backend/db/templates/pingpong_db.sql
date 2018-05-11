@@ -43,18 +43,35 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
 
 
+--
+-- Name: notify_trigger(); Type: FUNCTION; Schema: public; Owner: pingpong
+--
+
+CREATE FUNCTION public.notify_trigger() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+BEGIN
+  PERFORM pg_notify('watchers', TG_TABLE_NAME || ',id,' || NEW.id );
+  RETURN new;
+END;
+$$;
+
+
+ALTER FUNCTION public.notify_trigger() OWNER TO pingpong;
+
 SET default_tablespace = '';
 
 SET default_with_oids = false;
 
 --
--- Name: match_results; Type: TABLE; Schema: public; Owner: postgres
+-- Name: match_result; Type: TABLE; Schema: public; Owner: pingpong
 --
 
-CREATE TABLE public.match_results (
+CREATE TABLE public.match_result (
     id bigint NOT NULL,
-    player1_id bigint NOT NULL,
-    player2_id bigint NOT NULL,
+    player1_id bigint,
+    player2_id bigint,
     player1_score integer,
     player2_score integer,
     start_date timestamp without time zone DEFAULT now(),
@@ -62,13 +79,13 @@ CREATE TABLE public.match_results (
 );
 
 
-ALTER TABLE public.match_results OWNER TO postgres;
+ALTER TABLE public.match_result OWNER TO pingpong;
 
 --
--- Name: match_results_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: match_result_id_seq; Type: SEQUENCE; Schema: public; Owner: pingpong
 --
 
-CREATE SEQUENCE public.match_results_id_seq
+CREATE SEQUENCE public.match_result_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -76,13 +93,13 @@ CREATE SEQUENCE public.match_results_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.match_results_id_seq OWNER TO postgres;
+ALTER TABLE public.match_result_id_seq OWNER TO pingpong;
 
 --
--- Name: match_results_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: match_result_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pingpong
 --
 
-ALTER SEQUENCE public.match_results_id_seq OWNED BY public.match_results.id;
+ALTER SEQUENCE public.match_result_id_seq OWNED BY public.match_result.id;
 
 
 --
@@ -125,10 +142,10 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: match_results id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: match_result id; Type: DEFAULT; Schema: public; Owner: pingpong
 --
 
-ALTER TABLE ONLY public.match_results ALTER COLUMN id SET DEFAULT nextval('public.match_results_id_seq'::regclass);
+ALTER TABLE ONLY public.match_result ALTER COLUMN id SET DEFAULT nextval('public.match_result_id_seq'::regclass);
 
 
 --
@@ -139,11 +156,11 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 
 
 --
--- Name: match_results match_results_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: match_result match_result_pkey; Type: CONSTRAINT; Schema: public; Owner: pingpong
 --
 
-ALTER TABLE ONLY public.match_results
-    ADD CONSTRAINT match_results_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.match_result
+    ADD CONSTRAINT match_result_pkey PRIMARY KEY (id);
 
 
 --
@@ -168,6 +185,36 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users watched_table_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER watched_table_trigger AFTER INSERT ON public.users FOR EACH ROW EXECUTE PROCEDURE public.notify_trigger();
+
+
+--
+-- Name: match_result watched_table_trigger; Type: TRIGGER; Schema: public; Owner: pingpong
+--
+
+CREATE TRIGGER watched_table_trigger AFTER INSERT ON public.match_result FOR EACH ROW EXECUTE PROCEDURE public.notify_trigger();
+
+
+--
+-- Name: match_result match_result_player1_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pingpong
+--
+
+ALTER TABLE ONLY public.match_result
+    ADD CONSTRAINT match_result_player1_id_fkey FOREIGN KEY (player1_id) REFERENCES public.users(id);
+
+
+--
+-- Name: match_result match_result_player2_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pingpong
+--
+
+ALTER TABLE ONLY public.match_result
+    ADD CONSTRAINT match_result_player2_id_fkey FOREIGN KEY (player2_id) REFERENCES public.users(id);
 
 
 --
