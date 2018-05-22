@@ -1,30 +1,25 @@
 import React, { Component } from 'react';
 import matchHistory from 'services/state/matchHistory';
-import match from 'services/api/match';
+import logoutRoutine from 'services/routines/logout';
+import { observer } from 'mobx-react';
 import Render from './render';
 
 class DashboardCotainer extends Component {
   constructor() {
     super();
-    this.state = {
-      matches: []
-    };
+    this.handleLogout = this.handleLogout.bind(this);
   }
 
-  async componentWillMount() {
-    try {
-      const result = await match.get();
-      this.setState(() => ({ matches: result.matches }));
-    } catch (e) {
-      console.log('lol');
-    }
+  handleLogout() {
+    logoutRoutine();
   }
 
   render() {
     return Render({
-      matchList: this.state.matches
+      matchList: matchHistory.matches,
+      handleLogout: this.handleLogout
     });
   }
 }
 
-export default DashboardCotainer;
+export default observer(DashboardCotainer);

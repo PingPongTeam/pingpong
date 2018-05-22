@@ -7,6 +7,12 @@ import Button from 'components/Button';
 const Wrapper = glamorous.div({
   width: '100%'
 });
+const Menu = glamorous.div({
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  padding: '1em'
+});
 const StartMatch = glamorous.div({
   position: 'fixed',
   bottom: 0,
@@ -18,24 +24,34 @@ const MatchList = glamorous.div({
   alignItems: 'center'
 });
 const Match = glamorous.span({
+  display: 'flex',
+  width: '100%'
+});
+const PlayerBox = glamorous.div({
+  flexBasis: '50%',
+  flexGrow: 0,
+  flexShrink: 0,
   display: 'inline-flex',
   alignItems: 'center'
 });
 const PlayerName = glamorous.span({
   fontSize: '10vw',
-  padding: '0.2em'
+  fontWeight: 300
 });
 const PlayerScore = glamorous.span({
-  fontSize: '16vw',
-  padding: '0.2em'
+  fontSize: '15vw',
+  padding: '0.15em 0 0.15em',
+  flexBasis: '23vw',
+  textAlign: 'center'
 });
 const winner = { color: `hsl(${globalStyles.colors.success})` };
 const looser = { color: `hsl(${globalStyles.colors.danger})` };
 
-const Dashboard = ({ matchList }) => {
+const Dashboard = ({ matchList, handleLogout }) => {
   console.log(matchList);
   return (
     <Wrapper>
+      <Menu onClick={handleLogout}>Menu</Menu>
       <MatchList>
         {matchList.map((match, index) => {
           const playerOneColor =
@@ -44,18 +60,18 @@ const Dashboard = ({ matchList }) => {
             match.player2.score > match.player1.score ? winner : looser;
           return (
             <Match key={index}>
-              <PlayerName style={playerOneColor}>
-                {match.player1.alias}
-              </PlayerName>
-              <PlayerScore style={{ ...playerOneColor, textAlign: 'right' }}>
-                {match.player1.score}
-              </PlayerScore>
-              <PlayerScore style={playerTwoColor}>
-                {match.player2.score}
-              </PlayerScore>
-              <PlayerName style={playerTwoColor}>
-                {match.player2.alias}
-              </PlayerName>
+              <PlayerBox style={{ justifyContent: 'flex-end' }}>
+                <PlayerName>{match.player1.alias}</PlayerName>
+                <PlayerScore style={{ ...playerOneColor }}>
+                  {match.player1.score}
+                </PlayerScore>
+              </PlayerBox>
+              <PlayerBox>
+                <PlayerScore style={playerTwoColor}>
+                  {match.player2.score}
+                </PlayerScore>
+                <PlayerName>{match.player2.alias}</PlayerName>
+              </PlayerBox>
             </Match>
           );
         })}

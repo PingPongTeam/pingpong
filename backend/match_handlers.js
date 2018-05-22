@@ -21,9 +21,11 @@ match.create_validate = function(user, data) {
 match.create = function(user, { data, replyOK, replyFail }) {
   const pgp = user.pgp;
   pgp.query(
-    "INSERT into match_result " +
-      "(player1_id, player1_score, player2_id, player2_score) " +
-      "VALUES ($1, $2, $3, $4) RETURNING id;",
+    `
+      INSERT into match_result
+      (player1_id, player1_score, player2_id, player2_score) 
+      VALUES ($1, $2, $3, $4) RETURNING id;
+    `,
     [data.player1.id, data.player1.score, data.player2.id, data.player2.score],
     (err, result) => {
       if (err) {

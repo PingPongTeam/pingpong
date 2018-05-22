@@ -1,12 +1,12 @@
 import { decorate, observable } from 'mobx';
 
-let state = {
+let matchHistory = {
   matches: []
 };
 
-decorate(state, {
+decorate(matchHistory, {
   matches: observable
 });
 
-window.matches = state;
-export default state;
+window.matches = matchHistory;
+export default matchHistory;

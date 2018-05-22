@@ -1,5 +1,6 @@
 import io from 'socket.io-client';
 import state from 'services/state';
+import matchHistory from 'services/state/matchHistory';
 import { user } from './user';
 
 let backendHost = window.location.hostname;
@@ -25,7 +26,7 @@ socket.on('user:token', message => {
   }
 });
 
-socket.on('match:created', message => {
-    // TODO: Implement
-    console.log("Do something useful with this: " + JSON.stringify(message));
+socket.on('match:created', match => {
+  console.log('GOT NEW MATCH IN REAL TIME!: ' + JSON.stringify(match));
+  matchHistory.matches.unshift(match);
 });
