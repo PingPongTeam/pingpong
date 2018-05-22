@@ -60,18 +60,18 @@ function getMatches(pgp, { userId1, userId2, matchId }) {
   function matchFromDbMatch(row) {
     return {
       matchId: row.id,
-      player1: {
+      player: [{
         id: row.player1_id,
         score: row.player1_score,
         name: row.player1_name,
         alias: row.player1_alias
       },
-      player2: {
+      {
         id: row.player2_id,
         score: row.player2_score,
         name: row.player2_name,
         alias: row.player2_alias
-      },
+      }],
       date: row.end_date
     };
   }
@@ -139,8 +139,8 @@ match.created = eventContext => {
   getMatches(pgp, { matchId: matchId })
     .then(matches => {
       if (matches.length >= 1) {
-        const pid1 = matches[0].player1.id;
-        const pid2 = matches[0].player2.id;
+        const pid1 = matches[0].player[0].id;
+        const pid2 = matches[0].player[1].id;
         log(
           "New match (id: " +
             matchId +
