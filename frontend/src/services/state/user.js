@@ -24,7 +24,7 @@ var userState = {
 };
 
 decorate(userState, {
-  userId: observable,
+  id: observable,
   email: observable,
   alias: observable,
   name: observable

@@ -1,6 +1,6 @@
 import state from 'services/state';
 import userState from 'services/state/user';
-import matchHistory from 'services/state/matchHistory';
+import matches from 'services/state/matches';
 import match from 'services/api/match';
 
 async function loginRoutine(loginData) {
@@ -10,7 +10,7 @@ async function loginRoutine(loginData) {
   state.loggedIn = true;
   try {
     const result = await match.get();
-    matchHistory.matches = result.matches.reverse();
+    matches.history = result.matches.reverse();
     console.log('routine, got matches!', result.matches);
   } catch (e) {
     console.log('loginRoutine failed to get matches');

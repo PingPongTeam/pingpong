@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import glamorous from 'glamorous';
-import globalStyles from 'globalStyles';
 import SearchInput from 'components/SearchInput';
 import Button from 'components/Button';
 import SecondaryButton from 'components/SecondaryButton';

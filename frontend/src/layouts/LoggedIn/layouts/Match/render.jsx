@@ -1,6 +1,5 @@
 import React from 'react';
 import glamorous from 'glamorous';
-import globalStyles from 'globalStyles';
 import Button from 'components/Button';
 
 const Wrapper = glamorous.div({

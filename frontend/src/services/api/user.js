@@ -1,5 +1,4 @@
 import state from 'services/state';
-import userState from 'services/state/user';
 import loginRoutine from 'services/routines/login';
 import { socket } from './';
 
@@ -52,7 +51,6 @@ user.loginEmailOrAliasPass = async ({ auth, password }) => {
       }
     });
   });
-  await loginRoutine();
 };
 
 user.loginToken = async () => {

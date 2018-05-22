@@ -1,76 +1,65 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import glamorous from 'glamorous';
 import globalStyles from 'globalStyles';
 import Button from 'components/Button';
+import {
+  Wrapper,
+  Menu,
+  TotalScore,
+  TotalScoreNumber,
+  TotalScoreBox,
+  MatchListLabel,
+  MatchList,
+  Match,
+  PlayerBox,
+  PlayerName,
+  PlayerScore,
+  StartMatch
+} from './styles';
 
-const Wrapper = glamorous.div({
-  width: '100%'
-});
-const Menu = glamorous.div({
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  padding: '1em'
-});
-const StartMatch = glamorous.div({
-  position: 'fixed',
-  bottom: 0,
-  width: '100%'
-});
-const MatchList = glamorous.div({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center'
-});
-const Match = glamorous.span({
-  display: 'flex',
-  width: '100%'
-});
-const PlayerBox = glamorous.div({
-  flexBasis: '50%',
-  flexGrow: 0,
-  flexShrink: 0,
-  display: 'inline-flex',
-  alignItems: 'center'
-});
-const PlayerName = glamorous.span({
-  fontSize: '10vw',
-  fontWeight: 300
-});
-const PlayerScore = glamorous.span({
-  fontSize: '15vw',
-  padding: '0.15em 0 0.15em',
-  flexBasis: '23vw',
-  textAlign: 'center'
-});
 const winner = { color: `hsl(${globalStyles.colors.success})` };
 const looser = { color: `hsl(${globalStyles.colors.danger})` };
 
-const Dashboard = ({ matchList, handleLogout }) => {
-  console.log(matchList);
+const Dashboard = ({ handleLogout, userId, matches }) => {
   return (
     <Wrapper>
       <Menu onClick={handleLogout}>Menu</Menu>
+      <TotalScore>
+        <TotalScoreBox>
+          <div>wins</div>
+          <TotalScoreNumber>{matches.total.wins}</TotalScoreNumber>
+        </TotalScoreBox>
+        <TotalScoreBox>
+          <div>losses</div>
+          <TotalScoreNumber>{matches.total.losses}</TotalScoreNumber>
+        </TotalScoreBox>
+      </TotalScore>
+      <MatchListLabel>Recent matches</MatchListLabel>
       <MatchList>
-        {matchList.map((match, index) => {
+        {matches.history.map((match, index) => {
+          const playerOne = match.player.filter(player => {
+            return player.id == userId;
+          });
+          const playerTwo = match.player.filter(player => {
+            return player.id != userId;
+          });
           const playerOneColor =
-            match.player1.score > match.player2.score ? winner : looser;
+            match.player[0].score > match.player[1].score ? winner : looser;
           const playerTwoColor =
-            match.player2.score > match.player1.score ? winner : looser;
+            match.player[1].score > match.player[0].score ? winner : looser;
           return (
             <Match key={index}>
               <PlayerBox style={{ justifyContent: 'flex-end' }}>
-                <PlayerName>{match.player1.alias}</PlayerName>
+                <PlayerName>You</PlayerName>
                 <PlayerScore style={{ ...playerOneColor }}>
-                  {match.player1.score}
+                  {match.player[0].score}
                 </PlayerScore>
               </PlayerBox>
               <PlayerBox>
                 <PlayerScore style={playerTwoColor}>
-                  {match.player2.score}
+                  {match.player[1].score}
                 </PlayerScore>
-                <PlayerName>{match.player2.alias}</PlayerName>
+                <PlayerName>{match.player[1].alias}</PlayerName>
               </PlayerBox>
             </Match>
           );

@@ -1,5 +1,6 @@
-import React, { Component } from 'react';
-import matchHistory from 'services/state/matchHistory';
+import { Component } from 'react';
+import matches from 'services/state/matches';
+import userState from 'services/state/user';
 import logoutRoutine from 'services/routines/logout';
 import { observer } from 'mobx-react';
 import Render from './render';
@@ -16,8 +17,9 @@ class DashboardCotainer extends Component {
 
   render() {
     return Render({
-      matchList: matchHistory.matches,
-      handleLogout: this.handleLogout
+      matches,
+      handleLogout: this.handleLogout,
+      userId: userState.getUser().userId
     });
   }
 }
