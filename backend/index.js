@@ -11,6 +11,7 @@ const dbHelpers = require("./db_helpers.js");
 const errorCode = require("./error_code.js");
 const userHandlers = require("./user_handlers.js");
 const matchHandlers = require("./match_handlers.js");
+const models = require("./models");
 
 /* Example command handler:
   {
@@ -142,6 +143,7 @@ class User {
     const cmdContext = {
       info: this.info,
       pgp: pgp,
+      models: models,
       log: cmdLog,
       auth: this.auth,
       accessLevel: this.accessLevel,
