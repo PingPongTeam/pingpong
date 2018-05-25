@@ -23,7 +23,7 @@ const looser = { color: `hsl(${globalStyles.colors.danger})` };
 const Dashboard = ({ handleLogout, userId, matches }) => {
   return (
     <Wrapper>
-      <Menu onClick={handleLogout}>Menu</Menu>
+      <Menu onClick={handleLogout}>Log out</Menu>
       <TotalScore>
         <TotalScoreBox>
           <div>wins</div>
@@ -43,20 +43,18 @@ const Dashboard = ({ handleLogout, userId, matches }) => {
           const playerTwo = match.player.filter(player => {
             return player.id != userId;
           });
-          const playerOneColor =
+          const winOrLoss =
             match.player[0].score > match.player[1].score ? winner : looser;
-          const playerTwoColor =
-            match.player[1].score > match.player[0].score ? winner : looser;
           return (
             <Match key={index}>
               <PlayerBox style={{ justifyContent: 'flex-end' }}>
                 <PlayerName>You</PlayerName>
-                <PlayerScore style={{ ...playerOneColor }}>
+                <PlayerScore style={{ ...winOrLoss }}>
                   {match.player[0].score}
                 </PlayerScore>
               </PlayerBox>
               <PlayerBox>
-                <PlayerScore style={playerTwoColor}>
+                <PlayerScore style={{ ...winOrLoss }}>
                   {match.player[1].score}
                 </PlayerScore>
                 <PlayerName>{match.player[1].alias}</PlayerName>
