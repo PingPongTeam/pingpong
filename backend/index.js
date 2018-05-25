@@ -11,7 +11,7 @@ const dbHelpers = require("./db_helpers.js");
 const errorCode = require("./error_code.js");
 const userHandlers = require("./user_handlers.js");
 const matchHandlers = require("./match_handlers.js");
-const models = require("./models");
+const db = require("./models");
 
 /* Example command handler:
   {
@@ -21,6 +21,7 @@ const models = require("./models");
     handler: createUser
   }
 */
+db.sequelize.sync();
 
 const log = common.log;
 const commandHandlers = [].concat(
@@ -129,7 +130,7 @@ class User {
     this.updateLogPrefix();
   }
 
-  executeCommand(cmd, pgp, data, socketReply) {
+  executeCommand(cmd, data, socketReply) {
     const cmdLog = (...args) => {
       return this.log("[" + cmd.name + "]: " + args);
     };
@@ -143,7 +144,7 @@ class User {
     const cmdContext = {
       info: this.info,
       pgp: pgp,
-      models: models,
+      db: db,
       log: cmdLog,
       auth: this.auth,
       accessLevel: this.accessLevel,
@@ -187,7 +188,7 @@ io.on("connection", socket => {
   for (let i = 0; i < commandHandlers.length; i++) {
     let cmd = commandHandlers[i];
     socket.on(cmd.name, (data, reply) => {
-      user.executeCommand(cmd, pgp, data, reply);
+      user.executeCommand(cmd, data, reply);
     });
   }
 });
