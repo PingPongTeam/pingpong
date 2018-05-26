@@ -4,48 +4,53 @@ const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
 const config = require("./config.js");
-const { Pool } = require("pg");
+const { Client } = require("pg");
 const common = require("./common.js");
 const AccessLevel = require("./access_level.js");
 const dbHelpers = require("./db_helpers.js");
 const errorCode = require("./error_code.js");
 const userHandlers = require("./user_handlers.js");
 const matchHandlers = require("./match_handlers.js");
-
-/* Example command handler:
-  {
-    name: "user:create",
-    mustBeAuthed: false,
-    validate: createUserValidate,
-    handler: createUser
-  }
-*/
-
+const db = require("./models");
+const dbNotification = require("./db_notification.js");
 const log = common.log;
+
+// Create list of all command handlers
 const commandHandlers = [].concat(
   userHandlers.commands,
   matchHandlers.commands
 );
 const eventHandlers = Object.assign(matchHandlers.events);
 
-log("Connecting to " + config.db.uri);
-const pgp = new Pool({ connectionString: config.db.uri });
+// Lookup user connection from user id
+const userFromUserId = {};
+let connectionCounter = 0;
 
-// Setup a postgres notification listener
-pgp.connect((err, client, release) => {
-  if (err) {
-    console.log(err);
-    log("Failed to connect to db: " + err);
-  } else {
-    client.on("notification", function(msg) {
-      // Called on new post in any watched table
-      let [table, col, id] = msg.payload.split(",");
+db.sequelize
+  .sync()
+  .then(() => {
+    // Create notifictation triggers for each model
+    let promises = [];
+    Object.keys(db).forEach(modelName => {
+      if (db[modelName].associate) {
+        promises.push(
+          dbNotification.createTrigger(db.sequelize, db[modelName])
+        );
+      }
+    });
+    return Promise.all(promises);
+  })
+  .then(() => {
+    // Setup a postgres notification listener
+    log("Connecting to " + config.db.uri);
+    const pgp = new Client({ connectionString: config.db.uri });
+    dbNotification.listenForEvents(pgp, (table, col, id) => {
       if (eventHandlers[table]) {
         // We have an event handler which matches with the table name
         let evh = eventHandlers[table];
         const eventContext = {
           id: id,
-          pgp: pgp,
+          db: db,
           log: (...args) => {
             log("[" + evh.name + "]: " + args);
           },
@@ -54,15 +59,7 @@ pgp.connect((err, client, release) => {
         evh.handler(eventContext);
       }
     });
-    client.query("LISTEN watchers").then(res => {
-      log("Now connected to db and listening for notifications");
-    });
-  }
-});
-
-const userFromUserId = {};
-
-let connectionCounter = 0;
+  });
 
 class User {
   constructor(socket) {
@@ -81,9 +78,7 @@ class User {
   updateLogPrefix() {
     this.logPrefix =
       "[" +
-      (this.info
-        ? this.info.email + " (id: " + this.info.userId + ", "
-        : "unauthed (") +
+      (this.info ? this.info.email + " (" : "unauthed (") +
       this.accessLevel.shortName +
       ")]: ";
   }
@@ -128,7 +123,7 @@ class User {
     this.updateLogPrefix();
   }
 
-  executeCommand(cmd, pgp, data, socketReply) {
+  executeCommand(cmd, data, socketReply) {
     const cmdLog = (...args) => {
       return this.log("[" + cmd.name + "]: " + args);
     };
@@ -141,7 +136,7 @@ class User {
     }
     const cmdContext = {
       info: this.info,
-      pgp: pgp,
+      db: db,
       log: cmdLog,
       auth: this.auth,
       accessLevel: this.accessLevel,
@@ -185,7 +180,7 @@ io.on("connection", socket => {
   for (let i = 0; i < commandHandlers.length; i++) {
     let cmd = commandHandlers[i];
     socket.on(cmd.name, (data, reply) => {
-      user.executeCommand(cmd, pgp, data, reply);
+      user.executeCommand(cmd, data, reply);
     });
   }
 });

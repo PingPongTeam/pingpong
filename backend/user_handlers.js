@@ -7,6 +7,7 @@ const hash = crypto.createHash("sha256");
 const dbHelpers = require("./db_helpers.js");
 const errorCode = require("./error_code.js");
 const validation = require("./validation.js");
+const Op = require("sequelize").Op;
 
 function newToken(userId, email, expirationTime) {
   return new Promise(function(fulfill, reject) {
@@ -46,69 +47,60 @@ function createUserValidate(ctx, data) {
 
 // Create user'
 function createUser(user, { data, replyOK, replyFail }) {
-  let pgp = user.pgp;
+  let db = user.db;
   // Create a hashed password and insert user in db
   const passwdSalt = randomString(16);
   const passwdHash = sha512(data.password, passwdSalt);
-  pgp.query(
-    "INSERT into users(email, alias, name, passwd_hash, passwd_salt) VALUES " +
-      "($1, $2, $3, $4, $5) RETURNING id;",
-    [data.email, data.alias, data.name, passwdHash, passwdSalt],
-    (err, result) => {
-      if (err && err.code === "23505") {
-        // Either alias or email (or both) was not unique. Test which one(s).
-        pgp.query(
-          "SELECT id, email, alias FROM users WHERE email = $1 OR alias = $2;",
-          [data.email, data.alias],
-          (err, result) => {
-            let errorArray = [];
-            if (err) {
-              user.log("unhandled db error: " + JSON.stringify(err));
-              errorArray.push({ error: errorCode.internal });
-            } else {
-              result.rows.forEach(row => {
-                if (row.alias === data.alias) {
-                  errorArray.push({
-                    hint: "alias",
-                    error: errorCode.inUse
-                  });
-                }
-                if (row.email === data.email) {
-                  errorArray.push({
-                    hint: "email",
-                    error: errorCode.inUse
-                  });
-                }
-              });
-            }
-            replyFail(errorArray);
-          }
-        );
-      } else if (err) {
-        user.log("unhandled db error: " + JSON.stringify(err));
-        replyFail([{ error: errorCode.internal }]);
-      } else {
-        // User was created - Generate token and return
-        let userId = result.rows[0].id;
-        newToken(userId, data.email)
-          .then(token => {
-            user.log("Created user " + data.alias + " (" + userId + ")");
-            replyOK({
-              userObject: {
-                userId: userId,
-                email: data.email,
-                alias: data.alias,
-                name: data.name
-              },
-              token: token
-            });
-          })
-          .catch(err => {
-            user.log("Token error: " + err);
-          });
-      }
+  db.User.findOrCreate({
+    where: {
+      [Op.or]: [{ email: data.email }, { alias: data.alias }]
+    },
+    defaults: {
+      email: data.email,
+      alias: data.alias,
+      name: data.name,
+      passwdHash: passwdHash,
+      passwdSalt: passwdSalt
     }
-  );
+  }).spread((result, created) => {
+    if (created) {
+      // User was created - Generate token and return
+      let userId = result.id;
+      newToken(userId, data.email)
+        .then(token => {
+          user.log("Created user " + data.alias + " (" + userId + ")");
+          replyOK({
+            userObject: {
+              userId: userId,
+              email: data.email,
+              alias: data.alias,
+              name: data.name
+            },
+            token: token
+          });
+        })
+        .catch(err => {
+          user.log("Token error: " + err);
+        });
+    } else {
+      // Email and/or alias in use
+      // TODO: Check for both alias and/or email. Now first occurence is acted upon.
+      let errorArray = [];
+      if (result.alias === data.alias) {
+        errorArray.push({
+          hint: "alias",
+          error: errorCode.inUse
+        });
+      }
+      if (result.email === data.email) {
+        errorArray.push({
+          hint: "email",
+          error: errorCode.inUse
+        });
+      }
+      replyFail(errorArray);
+    }
+  });
 }
 
 function removeUserValidate(user, data) {
@@ -117,19 +109,19 @@ function removeUserValidate(user, data) {
 
 function removeUser(user, { data, replyOK, replyFail }) {
   // Remove the logged in user
-  const pgp = user.pgp;
+  const db = user.db;
   const incommingHash = sha512(data.password, user.auth.passwdSalt);
   if (incommingHash !== user.auth.passwdHash) {
     replyFail([{ hint: "password", error: errorCode.invalidValue }]);
   } else {
     // Remove account and logout user
-    pgp
-      .query("DELETE FROM users WHERE id = $1;", [user.info.userId])
-      .then(res => {
+    db.User.destroy({ where: { id: user.info.userId } }).then(result => {
+      if (result) {
         user.log("User account deleted");
-        user.logout();
-        replyOK({});
-      });
+      }
+      user.logout();
+      replyOK({});
+    });
   }
 }
 
@@ -143,7 +135,7 @@ function loginUserValidate(user, data) {
 }
 
 function loginUser(user, { data, replyOK, replyFail }) {
-  let pgp = user.pgp;
+  let db = user.db;
   if (data.token) {
     // Received token for authentication
     jwt.verify(data.token, config.jwt.secret, (err, decoded) => {
@@ -152,17 +144,52 @@ function loginUser(user, { data, replyOK, replyFail }) {
         replyFail([{ hint: "token", error: errorCode.invalidToken }]);
       } else {
         // Ensure that user exists in db
-        pgp
-          .query(
-            "SELECT id, email, alias, name, passwd_hash, passwd_salt" +
-              " FROM users WHERE id = $1;",
-            [decoded.userId]
-          )
-          .then(res => {
-            if (res.rowCount !== 1) {
-              replyFail([{ hint: "token", error: errorCode.invalidUser }]);
-            } else {
-              let row = res.rows[0];
+        db.User.findById(decoded.userId).then(result => {
+          if (result) {
+            const userInfo = {
+              userId: result.id,
+              alias: result.alias,
+              email: result.email,
+              name: result.name
+            };
+            const userAuth = {
+              token: data.token,
+              passwdHash: result.passwdHash,
+              passwdSalt: result.passwdSalt
+            };
+            newToken(result.id, result.email)
+              .then(token => {
+                user.login(userInfo, userAuth, AccessLevel.user);
+                replyOK({
+                  userObject: userInfo,
+                  token: data.token
+                });
+              })
+              .catch(err => {
+                user.log("Token error: " + err);
+                replyFail([{ error: errorCode.internal }]);
+              });
+          } else {
+            replyFail([{ hint: "token", error: errorCode.invalidUser }]);
+          }
+        });
+      }
+    });
+  } else {
+    // Received alias/email and password for authentication
+    // Ensure that user exists in db
+    db.User.findAll({
+      where: { [Op.or]: [{ email: data.auth }, { alias: data.auth }] }
+    }).then(result => {
+      if (result.length === 1) {
+        // User found
+        let row = result[0];
+        const incomming = sha512(data.password, row.passwdSalt);
+        if (incomming === row.passwdHash) {
+          // Return a new token to the verified user
+          newToken(row.id, row.email)
+            .then(token => {
+              // Mark user as authed and signed in
               const userInfo = {
                 userId: row.id,
                 alias: row.alias,
@@ -170,86 +197,33 @@ function loginUser(user, { data, replyOK, replyFail }) {
                 name: row.name
               };
               const userAuth = {
-                token: data.token,
-                passwdHash: row.passwd_hash,
-                passwdSalt: row.passwd_salt
+                token: token,
+                passwsHash: row.passwdHash,
+                passwdSalt: row.passwdSalt
               };
-              newToken(row.id, row.email)
-                .then(token => {
-                  user.login(userInfo, userAuth, AccessLevel.user);
-                  replyOK({
-                    userObject: userInfo,
-                    token: data.token
-                  });
-                })
-                .catch(err => {
-                  user.log("Token error: " + err);
-                  replyFail([{ error: errorCode.internal }]);
-                });
-            }
-          })
-          .catch(err => {
-            user.log("db error (" + JSON.stringify(data) + "): " + err);
-          });
+              user.login(userInfo, userAuth, AccessLevel.user);
+              replyOK({
+                userObject: userInfo,
+                token: token
+              });
+            })
+            .catch(err => {
+              user.log("Token error: " + err);
+            });
+        } else {
+          user.log("Invalid password for user: " + data.auth);
+          replyFail([{ hint: "auth", error: errorCode.invalidUser }]);
+        }
+      } else if (result.length === 0) {
+        // No such user
+        replyFail([{ hint: "auth", error: errorCode.invalidUser }]);
+      } else if (result.length > 1) {
+        user.log(
+          "Multiple matches on auth (" + data.auth + "): " + result.length
+        );
+        replyFail([{ hint: "auth", error: errorCode.internal }]);
       }
     });
-  } else {
-    // Received alias/email and password for authentication
-    pgp
-      .query(
-        "SELECT id, email, alias, name, passwd_hash, passwd_salt" +
-          " FROM users WHERE email = $1 OR alias = $1;",
-        [data.auth]
-      )
-      .then(res => {
-        if (res.rowCount === 1) {
-          // Found user - Test if the supplied password is correct
-          const row = res.rows[0];
-          const incomming = sha512(data.password, row.passwd_salt);
-          if (incomming === row.passwd_hash) {
-            // Return a new token to the verified user
-            newToken(row.id, row.email)
-              .then(token => {
-                // Mark user as authed and signed in
-                const userInfo = {
-                  userId: row.id,
-                  alias: row.alias,
-                  email: row.email,
-                  name: row.name
-                };
-                const userAuth = {
-                  token: token,
-                  passwsHash: row.passwd_hash,
-                  passwdSalt: row.passwd_salt
-                };
-                user.login(userInfo, userAuth, AccessLevel.user);
-                replyOK({
-                  userObject: userInfo,
-                  token: token
-                });
-              })
-              .catch(err => {
-                user.log("T!oken error: " + err);
-              });
-          } else {
-            user.log("Invalid password for user: " + data.auth);
-            replyFail([{ hint: "auth", error: errorCode.invalidUser }]);
-          }
-        } else if (res.rowCount === 0) {
-          // No such user
-          replyFail([{ hint: "auth", error: errorCode.invalidUser }]);
-        } else {
-          // DB returned multiple columns (shouldn't occur)!?
-          user.log(
-            "Multiple matches on auth (" + data.auth + "): " + res.rowCount
-          );
-          replyFail([{ hint: "auth", error: errorCode.internal }]);
-        }
-      })
-      .catch(err => {
-        user.log("db error (" + JSON.stringify(data) + "): " + err);
-        replyFail([{ hint: "auth", error: errorCode.internal }]);
-      });
   }
 }
 
@@ -269,29 +243,32 @@ function searchUserValidate(ctx, data) {
 }
 
 function searchUser(user, { data, replyOK, replyFail }) {
-  const pgp = user.pgp;
-  pgp
-    .query(
-      `SELECT id, alias, email, name
-       FROM users WHERE NOT id = $1 AND
-       (email ILIKE $2 OR alias ILIKE $2);`,
-      [user.info.userId, data.aliasOrEmail + "%"]
-    )
-    .then(result => {
-      const users = result.rows.map(row => {
-        return {
-          userId: row.id,
-          name: row.name,
-          alias: row.alias,
-          email: row.email
-        };
-      });
-      replyOK(users);
-    })
-    .catch(err => {
-      user.log("Error searching for user: " + err);
-      replyFail([{ error: errorCode.internal }]);
+  const db = user.db;
+  const searchExp = (data.aliasOrEmail + "%").toString();
+  db.User.findAll({
+    where: {
+      [Op.and]: [
+        { id: { [Op.not]: user.info.userId } },
+        {
+          [Op.or]: [
+            { email: { [Op.iLike]: searchExp } },
+            { alias: { [Op.iLike]: searchExp } }
+          ]
+        }
+      ]
+    }
+  }).then(result => {
+    user.log("Users found: " + result.length);
+    const users = result.map(row => {
+      return {
+        userId: row.id,
+        name: row.name,
+        alias: row.alias,
+        email: row.email
+      };
     });
+    replyOK(users);
+  });
 }
 
 const handlers = {
