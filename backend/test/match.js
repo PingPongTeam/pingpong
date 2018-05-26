@@ -87,7 +87,7 @@ describe("match:create/match:get", () => {
       result => {
         matches.push(result.result.matchId);
         assert(result.status === 0, "Unexpected status");
-        assert(result.result.matchId >= 0, "Unexpected status");
+        assert(result.result.matchId, "Unexpected status");
         done();
       }
     );
@@ -102,7 +102,7 @@ describe("match:create/match:get", () => {
       result => {
         matches.push(result.result.matchId);
         assert(result.status === 0, "Unexpected status");
-        assert(result.result.matchId >= 0, "Unexpected status");
+        assert(result.result.matchId, "Unexpected status");
         done();
       }
     );
@@ -117,7 +117,7 @@ describe("match:create/match:get", () => {
       result => {
         matches.push(result.result.matchId);
         assert(result.status === 0, "Unexpected status");
-        assert(result.result.matchId >= 0, "Unexpected status");
+        assert(result.result.matchId, "Unexpected status");
         done();
       }
     );

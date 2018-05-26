@@ -1,6 +1,8 @@
 const validation = require("./validation.js");
 const errorCode = require("./error_code.js");
 const AccessLevel = require("./access_level.js");
+const Op = require("sequelize").Op;
+
 const match = {};
 
 match.create_validate = function(user, data) {
@@ -19,96 +21,95 @@ match.create_validate = function(user, data) {
 };
 
 match.create = function(user, { data, replyOK, replyFail }) {
-  const pgp = user.pgp;
-  pgp.query(
-    "INSERT into match_result " +
-      "(player1_id, player1_score, player2_id, player2_score) " +
-      "VALUES ($1, $2, $3, $4) RETURNING id;",
-    [data.player1.id, data.player1.score, data.player2.id, data.player2.score],
-    (err, result) => {
-      if (err) {
-        user.log("unhandled db error: " + JSON.stringify(err));
-        replyFail([{ error: errorCode.internal }]);
-      } else {
-        replyOK({ matchId: result.rows[0].id });
-      }
-    }
-  );
+  const db = user.db;
+  db.Match.create({
+    player1Score: data.player1.score,
+    player2Score: data.player2.score,
+    player1Id: data.player1.id,
+    player2Id: data.player2.id
+  }).then(result => {
+    replyOK({ matchId: result.id });
+  });
 };
 
 match.get_validate = function(user, data) {
   return validation.validate(data, "/MatchGet");
 };
 
-function getMatches(pgp, { userId1, userId2, matchId }) {
-  let variables = [];
-  let whereStatement = "";
-  if (matchId) {
-    variables.push(matchId);
-    whereStatement = "WHERE m.id = $1;";
-  } else if (userId1 && userId2) {
-    const betweenUsers = userId1 !== userId2 ? true : false;
-    whereStatement = `WHERE (m.player1_id = $1 AND m.player2_id = $2)
-                      OR (m.player1_id = $2 AND m.player2_id = $1);`;
-    variables.push(userId1);
-    variables.push(userId2);
-  } else if (userId1) {
-    whereStatement = "WHERE (m.player1_id = $1 OR m.player2_id = $1)";
-    variables.push(userId1);
-  }
-
+function getMatches(db, { userId1, userId2, matchId }) {
   function matchFromDbMatch(row) {
     return {
       matchId: row.id,
-      player: [{
-        id: row.player1_id,
-        score: row.player1_score,
-        name: row.player1_name,
-        alias: row.player1_alias
-      },
-      {
-        id: row.player2_id,
-        score: row.player2_score,
-        name: row.player2_name,
-        alias: row.player2_alias
-      }],
-      date: row.end_date
+      player: [
+        {
+          score: row.player1Score,
+          id: row.player1.id,
+          name: row.player1.name,
+          alias: row.player1.alias,
+          email: row.player1.email
+        },
+        {
+          score: row.player2Score,
+          id: row.player2.id,
+          name: row.player2.name,
+          alias: row.player2.alias,
+          email: row.player2.email
+        }
+      ],
+      date: row.createdAt
     };
   }
 
-  return pgp
-    .query(
-      `SELECT
-          m.id,
-          m.player1_id,
-          m.player1_score,
-          m.player2_id,
-          m.player2_score,
-          m.end_date,
-          u1.name AS player1_name,
-          u1.alias AS player1_alias,
-          u2.name AS player2_name,
-          u2.alias AS player2_alias
-         FROM
-          match_result AS m
-         INNER JOIN users AS u1
-          ON m.player1_id = u1.id
-         INNER JOIN users AS u2
-          ON m.player2_id = u2.id
-         ${whereStatement};`,
-      variables
-    )
-    .then(res => {
-      let matchArray = res.rows.map(row => matchFromDbMatch(row));
+  if (matchId) {
+    return db.Match.findById(matchId, {
+      include: [
+        { model: db.User, as: "player1" },
+        { model: db.User, as: "player2" }
+      ]
+    }).then(result => {
+      if (result) {
+        return Promise.resolve([matchFromDbMatch(result)]);
+      }
+    });
+  } else if (userId1 && userId2 && userId1 != userId2) {
+    return db.Match.findAll({
+      where: {
+        [Op.or]: [
+          {
+            [Op.and]: [{ player1Id: userId1 }, { player2Id: userId2 }]
+          },
+          {
+            [Op.and]: [{ player1Id: userId2 }, { player2Id: userId1 }]
+          }
+        ]
+      },
+      include: [
+        { model: db.User, as: "player1" },
+        { model: db.User, as: "player2" }
+      ]
+    }).then(result => {
+      let matchArray = result.map(row => matchFromDbMatch(row.dataValues));
       return Promise.resolve(matchArray);
     });
+  } else if (userId1) {
+    return db.Match.findAll({
+      where: {
+        [Op.or]: [{ player1Id: userId1 }, { player2Id: userId1 }]
+      },
+      include: [
+        { model: db.User, as: "player1" },
+        { model: db.User, as: "player2" }
+      ]
+    }).then(result => {
+      let matchArray = result.map(row => matchFromDbMatch(row.dataValues));
+      return Promise.resolve(matchArray);
+    });
+  }
 }
 
 match.get = function(user, { data, replyOK, replyFail }) {
-  const pgp = user.pgp;
-
   if (data.matchId) {
-    getMatches(pgp, { matchId: data.matchId })
+    getMatches(user.db, { matchId: data.matchId })
       .then(matches => {
         replyOK({ matches: matches });
       })
@@ -118,7 +119,7 @@ match.get = function(user, { data, replyOK, replyFail }) {
       });
   } else {
     const userId1 = data.userId || data.userId1 || user.info.userId;
-    getMatches(pgp, { userId1: userId1, userId2: data.userId2 })
+    getMatches(user.db, { userId1: userId1, userId2: data.userId2 })
       .then(matches => {
         replyOK({ matches: matches });
       })
@@ -131,12 +132,11 @@ match.get = function(user, { data, replyOK, replyFail }) {
 
 match.created = eventContext => {
   let matchId = eventContext.id;
-  let pgp = eventContext.pgp;
   let log = eventContext.log;
   let userFromUserId = eventContext.userFromUserId;
 
   // Query db to get which users are referenced
-  getMatches(pgp, { matchId: matchId })
+  getMatches(eventContext.db, { matchId: matchId })
     .then(matches => {
       if (matches.length >= 1) {
         const pid1 = matches[0].player[0].id;
