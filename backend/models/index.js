@@ -9,7 +9,7 @@ const log = common.log;
 const db = {};
 
 // Or you can simply use a connection uri
-const sequelize = new Sequelize(config.db.uri);
+const sequelize = new Sequelize(config.db.uri, { logging: false });
 
 fs
   .readdirSync(__dirname)
