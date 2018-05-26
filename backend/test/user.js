@@ -50,7 +50,7 @@ describe("user:create/user:remove", () => {
       user.token = result.result.token;
       user.id = result.result.userId;
       assert(result.status === 0, "Unexpected status");
-      assert(result.result.userObject.userId >= 0, "Unexpected userId");
+      assert(result.result.userObject.userId, "Unexpected userId");
       assert(result.result.token, "Missing token");
       done();
     });
@@ -357,7 +357,7 @@ describe("user:search", () => {
       result => {
         assert(result.status === 0, "Unexpected status");
         assert(result.result.length === 9, "Unexpected number of matches");
-        assert(result.result[0].userId >= 0, "Unexpected userId");
+        assert(result.result[0].userId, "Unexpected userId");
         assert(result.result[0].name, "Missing name");
         assert(result.result[0].email, "Missing name");
         assert(result.result[0].alias, "Missing alias");
@@ -374,7 +374,7 @@ describe("user:search", () => {
       result => {
         assert(result.status === 0, "Unexpected status");
         assert(result.result.length === 1, "Unexpected number of matches");
-        assert(result.result[0].userId >= 0, "Unexpected userId");
+        assert(result.result[0].userId, "Unexpected userId");
         assert(result.result[0].name === "searchUser 5", "Unexpected name");
         assert(result.result[0].alias === "searchUser_5", "Unexpected alias");
         assert(

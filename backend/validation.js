@@ -65,8 +65,8 @@ validation.addSchema({
 validation.addSchema({
   id: "/UserId",
   type: "string",
-  minLength: 1,
-  maxLength: 20
+  minLength: 36,
+  maxLength: 36
 });
 
 validation.addSchema({

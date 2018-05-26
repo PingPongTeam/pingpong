@@ -172,7 +172,6 @@ function loginUser(user, { data, replyOK, replyFail }) {
           } else {
             replyFail([{ hint: "token", error: errorCode.invalidUser }]);
           }
-          user.log("*********************" + JSON.stringify(result));
         });
       }
     });
@@ -182,7 +181,6 @@ function loginUser(user, { data, replyOK, replyFail }) {
     db.User.findAll({
       where: { [Op.or]: [{ email: data.auth }, { alias: data.auth }] }
     }).then(result => {
-      user.log("*********************" + JSON.stringify(result));
       if (result.length === 1) {
         // User found
         let row = result[0];
