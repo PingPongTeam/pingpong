@@ -258,7 +258,7 @@ function searchUser(user, { data, replyOK, replyFail }) {
       ]
     }
   }).then(result => {
-    user.log("Users: " + result.length + ": " + JSON.stringify(result));
+    user.log("Users found: " + result.length);
     const users = result.map(row => {
       return {
         userId: row.id,

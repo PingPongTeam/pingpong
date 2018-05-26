@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
         notNull: { args: true, msg: "passwdSalt cannot be null" }
       }
     },
-    { paranoid: true }
+    { paranoid: true, freezeTableName: true }
   );
   User.associate = function(models) {
     // associations can be defined here

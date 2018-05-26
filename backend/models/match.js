@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
         notNull: { args: true, msg: "email cannot be null" }
       }
     },
-    { paranoid: true }
+    { paranoid: true, freezeTableName: true }
   );
   Match.associate = function(models) {
     Match.belongsTo(models.User, { as: "player1" });

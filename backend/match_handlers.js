@@ -164,7 +164,7 @@ match.created = eventContext => {
 };
 
 const handlers = {
-  events: { match_result: { name: "match:created", handler: match.created } },
+  events: { Match: { name: "match:created", handler: match.created } },
 
   commands: [
     {
