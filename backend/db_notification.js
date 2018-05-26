@@ -32,32 +32,23 @@ dbNotification.Triggers = class {
 dbNotification.createTrigger = function(db, model) {
   //associate a notification trigger for every insert on the model's table
   let triggers = new dbNotification.Triggers(model.name);
-  let triggersArr = [triggers.NOTIFY_TRIGGER, triggers.INSERT, triggers.UPDATE];
-  log("Create notification triggers for '" + model.name + "'");
-  let promises = triggersArr.map(trigger => {
-    return new Promise(function(fulfill, reject) {
-      db.query(trigger).then(result => {
-        if (!result) {
-          reject(new Error("Failed to create trigger"));
-        } else {
-          fulfill();
-        }
-      });
-    });
-  });
-  return Promise.all(promises)
+  //  let triggersArr = [triggers.NOTIFY_TRIGGER, triggers.INSERT, triggers.UPDATE];
+  return Promise.resolve()
     .then(() => {
-      log("All notification triggers for '" + model.name + "' created");
+      return db.query(triggers.NOTIFY_TRIGGER);
+    })
+    .then(() => {
+      return db.query(triggers.INSERT);
+    })
+    .then(() => {
+      return db.query(triggers.INSERT);
+    })
+    .then(() => {
+      log("Created notification triggers for '" + model.name + "'");
       return Promise.resolve();
     })
     .catch(err => {
-      log(
-        "Failed to create triggers for '" +
-          model.name +
-          "': " +
-          JSON.stringify(err)
-      );
-      return Promise.reject(err);
+      log("Failed to create notification triggers for '" + model.name + "'");
     });
 };
 

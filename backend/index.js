@@ -30,15 +30,24 @@ db.sequelize
   .sync()
   .then(() => {
     // Create notifictation triggers for each model
-    let promises = [];
-    Object.keys(db).forEach(modelName => {
+    const models = [];
+    Object.keys(db).map(modelName => {
       if (db[modelName].associate) {
-        promises.push(
-          dbNotification.createTrigger(db.sequelize, db[modelName])
-        );
+        models.push(modelName);
       }
     });
-    return Promise.all(promises);
+    function createTriggerCascade(offset) {
+      if (offset >= models.length) {
+        return Promise.resolve();
+      } else {
+        return dbNotification
+          .createTrigger(db.sequelize, db[models[offset]])
+          .then(() => {
+            return createTriggerCascade(offset + 1);
+          });
+      }
+    }
+    return createTriggerCascade(0);
   })
   .then(() => {
     // Setup a postgres notification listener
@@ -59,6 +68,10 @@ db.sequelize
         evh.handler(eventContext);
       }
     });
+  })
+  .then(() => {
+    log("Listening for connections at port " + config.express.port);
+    server.listen(config.express.port);
   });
 
 class User {
@@ -184,6 +197,3 @@ io.on("connection", socket => {
     });
   }
 });
-
-log("Listening for connections at port " + config.express.port);
-server.listen(config.express.port);
