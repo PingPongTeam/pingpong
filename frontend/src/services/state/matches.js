@@ -7,11 +7,13 @@ class Matches {
     let losses = 0;
     this.history.forEach(match => {
       const user = match.player.filter(player => {
-        return player.id == '1';
+        // TODO: Is it OK to access state like this (window.user etc)?
+        return player.id === window.user.userId;
       });
       const opponent = match.player.filter(player => {
-        return player.id != '1';
+        return player.id !== window.user.userId;
       });
+
       if (user[0].score > opponent[0].score) {
         wins++;
       } else {
