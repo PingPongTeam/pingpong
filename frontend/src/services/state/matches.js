@@ -1,4 +1,5 @@
 import { decorate, observable, computed } from 'mobx';
+import userState from './user';
 
 class Matches {
   history = [];
@@ -8,10 +9,10 @@ class Matches {
     this.history.forEach(match => {
       const user = match.player.filter(player => {
         // TODO: Is it OK to access state like this (window.user etc)?
-        return player.id === window.user.userId;
+        return player.id === userState.userId;
       });
       const opponent = match.player.filter(player => {
-        return player.id !== window.user.userId;
+        return player.id !== userState.userId;
       });
 
       if (user[0].score > opponent[0].score) {
