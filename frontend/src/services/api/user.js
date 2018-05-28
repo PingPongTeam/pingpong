@@ -22,17 +22,8 @@ user.create = ({ name, email, alias, password }) => {
     socket.emit('user:create', { name, email, alias, password }, response => {
       if (response.status === 0) {
         console.log('userObject:', response.result.userObject);
-        socket.emit(
-          'user:login',
-          { token: response.result.token },
-          async response => {
-            if (response.status === 0) {
-              await loginRoutine(response.result);
-            } else if (response.errors) {
-              reject(response.errors);
-            }
-          }
-        );
+        window.localStorage.setItem('jwt', response.result.token);
+        user.loginToken();
       } else if (response.errors) {
         reject(response.errors);
       }
