@@ -19,7 +19,8 @@ const inputStyles = {
 const SearchIconWrapper = glamorous.div({
   position: 'absolute',
   left: '1.7em',
-  paddingTop: '0.3em'
+  top: '50%',
+  transform: 'translateY(-50%)'
 });
 const searchIcon = (
   <svg
@@ -110,6 +111,7 @@ const SearchInputRender = ({
           placeholder={placeholder}
           onChange={handleInputChange}
           onKeyDown={inputKeyDown}
+          margin="0"
         />
       </InputWrapper>
       {searchResult && (

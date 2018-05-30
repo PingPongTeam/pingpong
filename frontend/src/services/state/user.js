@@ -31,4 +31,5 @@ decorate(userState, {
 });
 
 window.user = userState;
+window.mobx = decorate;
 export default userState;

@@ -6,7 +6,8 @@ const Wrapper = glamorous.div({
   display: 'flex',
   width: '100%',
   flexDirection: 'column',
-  justifyContent: 'space-between'
+  justifyContent: 'space-between',
+  userSelect: 'none'
 });
 
 const Players = glamorous.div({
@@ -55,28 +56,28 @@ const MatchRender = ({
       <Players>
         <Player>
           <PlayerName
-            onClick={() => {
+            onTouchEnd={() => {
               addPoint(0);
             }}
           >
             {player[0].alias}
           </PlayerName>
           <PointChanger
-            onClick={() => {
+            onTouchEnd={() => {
               addPoint(0);
             }}
           >
             +
           </PointChanger>
           <PlayerScore
-            onClick={() => {
+            onTouchEnd={() => {
               addPoint(0);
             }}
           >
             {player[0].score}
           </PlayerScore>
           <PointChanger
-            onClick={() => {
+            onTouchEnd={() => {
               subtractPoint(0);
             }}
           >
@@ -85,28 +86,28 @@ const MatchRender = ({
         </Player>
         <Player>
           <PlayerName
-            onClick={() => {
+            onTouchEnd={() => {
               addPoint(1);
             }}
           >
             {player[1].alias}
           </PlayerName>
           <PointChanger
-            onClick={() => {
+            onTouchEnd={() => {
               addPoint(1);
             }}
           >
             +
           </PointChanger>
           <PlayerScore
-            onClick={() => {
+            onTouchEnd={() => {
               addPoint(1);
             }}
           >
             {player[1].score}
           </PlayerScore>
           <PointChanger
-            onClick={() => {
+            onTouchEnd={() => {
               subtractPoint(1);
             }}
           >
@@ -114,7 +115,7 @@ const MatchRender = ({
           </PointChanger>
         </Player>
       </Players>
-      <Button onClick={submitMatch} loading={submittingMatch}>
+      <Button onTouchEnd={submitMatch} loading={submittingMatch}>
         End Match
       </Button>
     </Wrapper>
