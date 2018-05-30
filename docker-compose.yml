@@ -29,6 +29,7 @@ services:
     environment:
       - NODE_ENV=development
       - REACT_APP_BACKEND_PORT=3001
+      - BACKEND_URL=localhost:3001
       - PORT=3000
 
   nodebackend:

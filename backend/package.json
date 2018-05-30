@@ -7,7 +7,7 @@
     "start": "node ./index.js",
     "test": "mocha"
   },
-  "author": "Olle",
+  "author": "Erik",
   "dependencies": {
     "express": "^4.16.3",
     "jsonschema": "^1.2.4",

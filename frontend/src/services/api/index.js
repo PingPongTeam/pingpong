@@ -3,10 +3,12 @@ import state from 'services/state';
 import matches from 'services/state/matches';
 import { user } from './user';
 
-let backendHost = window.location.hostname;
-let backendPort = process.env.REACT_APP_BACKEND_PORT || '3001';
-
-export const socket = io(backendHost + ':' + backendPort);
+let backendPort = process.env.REACT_APP_WS_PORT || window.location.port;
+let backendUrl = process.env.REACT_APP_WS_HOST || window.location.hostname;
+backendUrl += backendPort ? ( ':' + backendPort ) : "";
+// export const socket = io(backendHost + ':' + backendPort);
+export const socket = io(backendUrl);
+console.log("connecting to socket url: " + backendUrl);
 
 socket.on('connect', () => {
   state.connectedToServer = true;
