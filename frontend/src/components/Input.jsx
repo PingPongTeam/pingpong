@@ -30,6 +30,7 @@ const Input = ({ value, label, notice, status, getRef, margin, ...rest }) => {
   const inputStyles = css({
     borderStyle: 'solid',
     borderWidth: '1px',
+    appearance: 'none !important',
     borderColor: statusColor,
     color: `hsla(${globalStyles.colors.white}, 1)`,
     fontSize: '24px',

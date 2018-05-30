@@ -2,7 +2,8 @@ import glamorous from 'glamorous';
 
 export const Wrapper = glamorous.div({
   width: '100%',
-  padding: '10vh 4vw'
+  padding: '10vh 4vw',
+  userSelect: 'none'
 });
 export const Menu = glamorous.div({
   position: 'fixed',
