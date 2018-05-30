@@ -1,3 +1,7 @@
+* {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  user-select: none;
+}
 html {
   background-color: hsla(213, 74%, 15%, 1);
   color: white;
