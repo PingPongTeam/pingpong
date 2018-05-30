@@ -56,28 +56,28 @@ const MatchRender = ({
       <Players>
         <Player>
           <PlayerName
-            onTouchEnd={() => {
+            onClick={() => {
               addPoint(0);
             }}
           >
             {player[0].alias}
           </PlayerName>
           <PointChanger
-            onTouchEnd={() => {
+            onClick={() => {
               addPoint(0);
             }}
           >
             +
           </PointChanger>
           <PlayerScore
-            onTouchEnd={() => {
+            onClick={() => {
               addPoint(0);
             }}
           >
             {player[0].score}
           </PlayerScore>
           <PointChanger
-            onTouchEnd={() => {
+            onClick={() => {
               subtractPoint(0);
             }}
           >
@@ -86,28 +86,28 @@ const MatchRender = ({
         </Player>
         <Player>
           <PlayerName
-            onTouchEnd={() => {
+            onClick={() => {
               addPoint(1);
             }}
           >
             {player[1].alias}
           </PlayerName>
           <PointChanger
-            onTouchEnd={() => {
+            onClick={() => {
               addPoint(1);
             }}
           >
             +
           </PointChanger>
           <PlayerScore
-            onTouchEnd={() => {
+            onClick={() => {
               addPoint(1);
             }}
           >
             {player[1].score}
           </PlayerScore>
           <PointChanger
-            onTouchEnd={() => {
+            onClick={() => {
               subtractPoint(1);
             }}
           >
@@ -115,7 +115,7 @@ const MatchRender = ({
           </PointChanger>
         </Player>
       </Players>
-      <Button onTouchEnd={submitMatch} loading={submittingMatch}>
+      <Button onClick={submitMatch} loading={submittingMatch}>
         End Match
       </Button>
     </Wrapper>

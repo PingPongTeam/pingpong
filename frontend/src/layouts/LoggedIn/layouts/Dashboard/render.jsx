@@ -37,27 +37,27 @@ const Dashboard = ({ handleLogout, userId, matches }) => {
       <MatchListLabel>Recent matches</MatchListLabel>
       <MatchList>
         {matches.history.map((match, index) => {
-          const playerOne = match.player.filter(player => {
+          const playerOne = match.player.find(player => {
             return player.id == userId;
           });
-          const playerTwo = match.player.filter(player => {
+          console.log(playerOne);
+          const playerTwo = match.player.find(player => {
             return player.id != userId;
           });
-          const winOrLoss =
-            match.player[0].score > match.player[1].score ? winner : looser;
+          const winOrLoss = playerOne.score > playerTwo.score ? winner : looser;
           return (
             <Match key={index}>
               <PlayerBox style={{ justifyContent: 'flex-end' }}>
                 <PlayerName>You</PlayerName>
                 <PlayerScore style={{ ...winOrLoss }}>
-                  {match.player[0].score}
+                  {playerOne.score}
                 </PlayerScore>
               </PlayerBox>
               <PlayerBox>
                 <PlayerScore style={{ ...winOrLoss }}>
-                  {match.player[1].score}
+                  {playerTwo.score}
                 </PlayerScore>
-                <PlayerName>{match.player[1].alias}</PlayerName>
+                <PlayerName>{playerTwo.alias}</PlayerName>
               </PlayerBox>
             </Match>
           );
