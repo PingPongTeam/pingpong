@@ -1,5 +1,4 @@
 # pingpong
-pingpong
 
 Deploy
 Install heroku CLI https://devcenter.heroku.com/articles/heroku-cli
