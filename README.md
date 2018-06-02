@@ -1,10 +1,4 @@
 # UNDERSKRUV
 
 ###Deploy: 
-Install heroku CLI https://devcenter.heroku.com/articles/heroku-cli
-
-Login with heroku CLI https://devcenter.heroku.com/articles/heroku-cli#getting-started
-
-Navigate to masterbranch root folder and run `heroku container:push web --app underskruv`
-
-After the image is built and pushed to heroku container repository run `heroku container:release web --app underskruv`
+Just push to master branch and the magical wonders in the world of tcp/ip will do the rest for you.
