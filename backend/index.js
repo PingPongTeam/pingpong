@@ -4,6 +4,7 @@ const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
 const config = require("./config.js");
+const dbConfig = require("./config/db.js");
 const { Client } = require("pg");
 const common = require("./common.js");
 const AccessLevel = require("./access_level.js");
@@ -51,8 +52,8 @@ db.sequelize
   })
   .then(() => {
     // Setup a postgres notification listener
-    log("Connecting to " + config.db.uri);
-    const pgp = new Client({ connectionString: config.db.uri });
+    log("Connecting to " + dbConfig[process.env.NODE_ENV].uri);
+    const pgp = new Client(dbConfig[process.env.NODE_ENV].uri);
     dbNotification.listenForEvents(pgp, (table, col, id) => {
       if (eventHandlers[table]) {
         // We have an event handler which matches with the table name

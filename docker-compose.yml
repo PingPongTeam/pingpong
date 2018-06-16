@@ -55,9 +55,10 @@ services:
     environment:
       - NODE_ENV=development
       - SOCKETIO_SERVER_PORT=3001
-      # - DB_HOST=db
-      # - DB_PORT=5432
-      - DB_URI=postgresql://pingpong:pingpongpassword@db:5432/pingpong
+      - DB_USERNAME=pingpong
+      - DB_PASSWORD=pingpongpassword
+      - DB_NAME=pingpong
+      - DB_HOSTNAME=db:5432
     links:
       - db
     depends_on:

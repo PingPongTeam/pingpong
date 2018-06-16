@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const basename = path.basename(__filename);
-const config = require("../config.js");
+const config = require("../config/db.js");
 const common = require("../common.js");
 const Sequelize = require("sequelize");
 const log = common.log;
@@ -9,7 +9,9 @@ const log = common.log;
 const db = {};
 
 // Or you can simply use a connection uri
-const sequelize = new Sequelize(config.db.uri, { logging: false });
+const sequelize = new Sequelize(config[process.env.NODE_ENV].uri, {
+  logging: false
+});
 
 fs
   .readdirSync(__dirname)
