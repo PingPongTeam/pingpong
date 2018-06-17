@@ -13,6 +13,9 @@ ARG PORT=3001
 ENV PORT $PORT
 EXPOSE $PORT 5858 9229
 
+ARG START_CMD="npm start"
+ENV START_CMD $START_CMD
+
 # creating a healthcheck that will ensure that this server will return HTTP 200 every 30 sec
 HEALTHCHECK CMD curl -fs http://localhost:$PORT/healthz || exit 1
 
@@ -27,4 +30,4 @@ WORKDIR /opt/app
 COPY . /opt/app
 
 # run the node server 
-CMD [ "npm", "start" ]
+CMD [ "./start.sh" ]

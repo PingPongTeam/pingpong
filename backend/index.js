@@ -27,8 +27,7 @@ const eventHandlers = Object.assign(matchHandlers.events);
 const userFromUserId = {};
 let connectionCounter = 0;
 
-db.sequelize
-  .sync()
+Promise.resolve()
   .then(() => {
     // Create notifictation triggers for each model
     const models = [];

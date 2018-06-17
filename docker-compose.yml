@@ -37,11 +37,12 @@ services:
       context: ./backend
       args:
         - NODE_ENV=development
-    container_name: nodebackend
     # either use legacy debug config or new inspect (dont really understand this yet?)
-    # NOTE: if nodemon isn't restarting on changes, there can somtimes be problems with windows not seeing file changes.
+    # NOTE: if nodemon isn't restarting on changes, there can somtimes be problems with
+    # windows not seeing file changes.
     # se https://github.com/remy/nodemon#application-isnt-restarting for more information
-    command: ../node_modules/.bin/nodemon --inspect=0.0.0.0:9229
+      - START_CMD=nodemon --inspect=0.0.0.0:9229
+    container_name: nodebackend
     ports:
       - "3001:3001"
       - "5858:5858"
@@ -58,7 +59,7 @@ services:
       - DB_USERNAME=pingpong
       - DB_PASSWORD=pingpongpassword
       - DB_NAME=pingpong
-      - DB_HOSTNAME=db:5432
+      - DB_HOSTNAME=db
     links:
       - db
     depends_on:
